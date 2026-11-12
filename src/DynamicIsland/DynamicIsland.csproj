@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- Windows 10 SDK hedefi: Windows.Media.Control (GSMTC) API'si için gerekli -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>DynamicIsland</RootNamespace>
+    <AssemblyName>DynamicIsland</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Posta: IMAP ile gelen kutusunu okumak için -->
+    <PackageReference Include="MailKit" Version="4.*" />
+    <!-- VS Code: son açılan klasörler VS Code'un SQLite veritabanında tutuluyor -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.*" />
+  </ItemGroup>
+
+</Project>

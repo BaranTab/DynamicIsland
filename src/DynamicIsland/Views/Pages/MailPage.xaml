@@ -1,0 +1,109 @@
+<UserControl x:Class="DynamicIsland.Views.Pages.MailPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Width="636" Height="190" Foreground="White">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="180" />
+            <ColumnDefinition Width="14" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Sol: okunmamış sayısı -->
+        <Border CornerRadius="20" Padding="16,14">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#E0574F" Offset="0" />
+                    <GradientStop Color="#6E1F1B" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="&#xE715;" Style="{StaticResource IconGlyph}" Opacity="0.85" />
+                    <TextBlock Text="GELEN KUTUSU" Style="{StaticResource Label}" />
+                </DockPanel>
+
+                <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding MailUnreadText}" FontSize="52" FontWeight="SemiBold" Margin="0,-6,0,-6" />
+                    <TextBlock Text="{Binding MailUnreadCaption}" FontSize="13" Opacity="0.85" />
+                    <TextBlock Text="{Binding MailAccount}" FontSize="10" Opacity="0.6" Margin="0,2,0,0"
+                               TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+
+                <Button Grid.Row="2" Style="{StaticResource SmallPillButton}" HorizontalAlignment="Left"
+                        Content="Gelen kutusunu aç" Click="OpenInbox_Click" />
+            </Grid>
+        </Border>
+
+        <!-- Sağ: son e-postalar -->
+        <Grid Grid.Column="2" Visibility="{Binding MailReadyVisibility}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Style="{StaticResource SmallIconButton}" Content="&#xE72C;"
+                        ToolTip="Yenile" Click="Refresh_Click" Margin="0,-6,0,0" />
+                <TextBlock DockPanel.Dock="Right" Text="{Binding MailStatus}" FontSize="10" Opacity="0.5"
+                           VerticalAlignment="Center" Margin="0,0,6,0" TextTrimming="CharacterEllipsis" MaxWidth="250" />
+                <TextBlock Text="SON E-POSTALAR" Style="{StaticResource Label}" VerticalAlignment="Center" />
+            </DockPanel>
+
+            <ItemsControl Grid.Row="1" Margin="0,8,0,0" ItemsSource="{Binding MailMessages}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource RowItem}" MouseLeftButtonUp="Row_Click">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <Border Width="30" Height="30" CornerRadius="15" Background="#33FFFFFF"
+                                        VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Initial}" FontWeight="SemiBold" FontSize="13"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+
+                                <StackPanel Grid.Column="1" Margin="10,0">
+                                    <TextBlock Text="{Binding From}" FontSize="12" FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding Subject}" FontSize="11" Opacity="0.7"
+                                               TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+                                    <TextBlock Text="{Binding TimeText}" FontFamily="{StaticResource Mono}"
+                                               FontSize="10" Opacity="0.55" HorizontalAlignment="Right" />
+                                    <Ellipse Width="7" Height="7" Fill="#FF6B62" HorizontalAlignment="Right"
+                                             Margin="0,6,0,0" Opacity="{Binding UnreadDotOpacity}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock Grid.Row="1" Text="Gelen kutusu boş ya da henüz yüklenmedi." FontSize="13" Opacity="0.5"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Visibility="{Binding MailEmptyVisibility}" />
+        </Grid>
+
+        <!-- Sağ: kurulum -->
+        <StackPanel Grid.Column="2" VerticalAlignment="Center" Visibility="{Binding MailSetupVisibility}">
+            <TextBlock Text="Posta hesabını bağla" FontSize="20" FontWeight="SemiBold" />
+            <TextBlock FontSize="12" Opacity="0.65" TextWrapping="Wrap" Margin="0,6,0,12" LineHeight="18"
+                       Text="Gmail için: Google Hesabı → Güvenlik → 2 Adımlı Doğrulama'yı aç → Uygulama şifreleri'nden bir şifre oluştur. Sonra ayarlar dosyasında Mail bölümüne e-posta adresini ve bu şifreyi yaz, uygulamayı yeniden başlat." />
+            <Button Style="{StaticResource SmallPillButton}" HorizontalAlignment="Left"
+                    Content="Ayarları aç" Click="OpenSettings_Click" />
+        </StackPanel>
+    </Grid>
+</UserControl>

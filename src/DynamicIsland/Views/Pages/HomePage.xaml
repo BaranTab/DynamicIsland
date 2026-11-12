@@ -1,0 +1,105 @@
+<UserControl x:Class="DynamicIsland.Views.Pages.HomePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Width="636" Height="190" Foreground="White">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="160" />
+            <ColumnDefinition Width="10" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="10" />
+            <ColumnDefinition Width="160" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Hava kartı -->
+        <Border Grid.Column="0" Style="{StaticResource HomeCard}" Padding="16,14"
+                Tag="3" MouseLeftButtonUp="Card_Click">
+            <Grid>
+                <TextBlock Text="HAVA" Style="{StaticResource Label}" />
+                <TextBlock Text="{Binding WeatherIcon}" FontSize="28"
+                           HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,0,0" />
+                <StackPanel VerticalAlignment="Bottom">
+                    <TextBlock Text="{Binding WeatherTemp}" FontSize="40" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding WeatherShort}" FontSize="12" Opacity="0.8"
+                               TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Müzik kartı (arka plan = albüm kapağı) -->
+        <Border Grid.Column="2" Style="{StaticResource HomeCard}" Tag="1" MouseLeftButtonUp="Card_Click">
+            <Grid>
+                <Border CornerRadius="20" Background="#16FFFFFF" />
+                <Border CornerRadius="20">
+                    <Border.Background>
+                        <ImageBrush ImageSource="{Binding AlbumArt}" Stretch="UniformToFill" Opacity="0.85" />
+                    </Border.Background>
+                </Border>
+                <Border CornerRadius="20">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#22000000" Offset="0" />
+                            <GradientStop Color="#D0000000" Offset="1" />
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+
+                <TextBlock Text="MÜZİK" Style="{StaticResource Label}" Margin="16,14" />
+
+                <Grid Margin="16,0,14,14" VerticalAlignment="Bottom" Visibility="{Binding MediaVisibility}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Bottom">
+                        <TextBlock Text="{Binding MediaTitle}" FontSize="22" FontWeight="Bold"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding MediaArtist}" FontSize="13" Opacity="0.75"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Style="{StaticResource PlayButton}" Width="40" Height="40"
+                            FontSize="15" Content="{Binding PlayPauseGlyph}" Click="PlayPause_Click"
+                            Margin="10,0,0,0" VerticalAlignment="Bottom" />
+                </Grid>
+
+                <TextBlock Text="Şu an bir şey çalmıyor" FontSize="13" Opacity="0.5"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Visibility="{Binding NoMediaVisibility}" />
+            </Grid>
+        </Border>
+
+        <!-- Sağ sütun: Odak + Posta -->
+        <Grid Grid.Column="4">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="10" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Border Style="{StaticResource HomeCard}" Padding="14,10" Tag="2" MouseLeftButtonUp="Card_Click">
+                <Grid>
+                    <TextBlock Text="ODAK" Style="{StaticResource Label}" />
+                    <TextBlock Text="&#xE916;" Style="{StaticResource IconGlyph}" FontSize="14"
+                               HorizontalAlignment="Right" VerticalAlignment="Top" Opacity="0.85" />
+                    <TextBlock Text="{Binding FocusStatusText}" FontSize="10" Opacity="0.6"
+                               HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,6" />
+                    <TextBlock Text="{Binding FocusRemainingText}" FontFamily="{StaticResource Mono}"
+                               FontSize="28" FontWeight="SemiBold" VerticalAlignment="Bottom" />
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="2" Style="{StaticResource HomeCard}" Padding="14,10" Tag="4" MouseLeftButtonUp="Card_Click">
+                <Grid>
+                    <TextBlock Text="POSTA" Style="{StaticResource Label}" />
+                    <TextBlock Text="&#xE715;" Style="{StaticResource IconGlyph}" FontSize="14"
+                               HorizontalAlignment="Right" VerticalAlignment="Top" Opacity="0.85" />
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
+                        <TextBlock Text="{Binding MailUnreadText}" FontSize="28" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding MailUnreadCaption}" FontSize="11" Opacity="0.8"
+                                   VerticalAlignment="Bottom" Margin="8,0,0,6" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
