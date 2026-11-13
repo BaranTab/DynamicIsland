@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net.Http;
 using System.Text.RegularExpressions;
+using DynamicIsland.Localization;
 using DynamicIsland.Services;
 
 namespace DynamicIsland.Modules;
@@ -8,8 +9,8 @@ namespace DynamicIsland.Modules;
 public sealed record CalendarEvent(DateTime Start, bool AllDay, string Title);
 
 /// <summary>
-/// iCal (.ics) adresinden etkinlikleri okur. Google Takvim, Outlook ve Apple Takvim iCal adresi verir.
-/// Not: Tekrarlayan etkinlikler (RRULE) şimdilik sadece ilk tarihleriyle görünür.
+/// Reads events from an iCal (.ics) URL. Google Calendar, Outlook and iCloud all provide one.
+/// Note: recurring events (RRULE) currently only show their first occurrence.
 /// </summary>
 public sealed class CalendarModule : IIslandModule
 {
@@ -19,16 +20,19 @@ public sealed class CalendarModule : IIslandModule
 
     public CalendarModule(CalendarSettings settings) => _settings = settings;
 
-    public string Name => "Takvim";
+    public string Name => "Calendar";
     public int Priority => 1;
     public bool IsActive => false;
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(_settings.IcsUrl);
     public string WebUrl => _settings.WebUrl;
     public IReadOnlyList<CalendarEvent> Events { get; private set; } = Array.Empty<CalendarEvent>();
-    public string Status { get; private set; } = "";
 
-    /// <summary>Her yenilemede artar; arayüz takvimi sadece değişince yeniden çizer.</summary>
+    /// <summary>Translation key of the current status.</summary>
+    public string StatusKey { get; private set; } = "";
+    public string StatusArgument { get; private set; } = "";
+
+    /// <summary>Incremented on every refresh, so the UI only rebuilds the month view when something changed.</summary>
     public int Version { get; private set; }
 
     public event EventHandler? Changed;
@@ -49,11 +53,13 @@ public sealed class CalendarModule : IIslandModule
                 var url = Regex.Replace(_settings.IcsUrl.Trim(), "^webcal://", "https://", RegexOptions.IgnoreCase);
                 var text = await Http.GetStringAsync(url);
                 Events = Parse(text);
-                Status = $"Güncellendi {DateTime.Now:HH:mm}";
+                StatusKey = "CalendarStatusUpdated";
+                StatusArgument = DateTime.Now.ToString("HH:mm");
             }
             catch (Exception ex)
             {
-                Status = "Takvim alınamadı: " + ex.Message;
+                StatusKey = "CalendarStatusFailed";
+                StatusArgument = ex.Message;
             }
         }
 
@@ -63,7 +69,7 @@ public sealed class CalendarModule : IIslandModule
 
     private static List<CalendarEvent> Parse(string ics)
     {
-        // Uzun satırlar bir sonraki satıra boşlukla devam eder ("line folding")
+        // Long lines continue on the next line starting with a space ("line folding")
         var unfolded = Regex.Replace(ics, @"\r?\n[ \t]", "");
         var events = new List<CalendarEvent>();
 
@@ -78,7 +84,7 @@ public sealed class CalendarModule : IIslandModule
             if (line == "END:VEVENT")
             {
                 if (start != null && TryParseDate(start, out var date, out bool allDay))
-                    events.Add(new CalendarEvent(date, allDay, summary ?? "(Başlıksız)"));
+                    events.Add(new CalendarEvent(date, allDay, summary ?? Loc.T("CalendarUntitled")));
                 inEvent = false;
                 continue;
             }
@@ -106,12 +112,14 @@ public sealed class CalendarModule : IIslandModule
         var inv = CultureInfo.InvariantCulture;
         allDay = false;
 
+        // All-day event: 20261113
         if (value.Length == 8 && DateTime.TryParseExact(value, "yyyyMMdd", inv, DateTimeStyles.None, out date))
         {
             allDay = true;
             return true;
         }
 
+        // UTC time: 20261113T090000Z
         if (value.EndsWith('Z') &&
             DateTime.TryParseExact(value, "yyyyMMdd'T'HHmmss'Z'", inv,
                 DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out date))
@@ -120,7 +128,7 @@ public sealed class CalendarModule : IIslandModule
             return true;
         }
 
-        // TZID'li saatler yerel saat kabul edilir
+        // Times with a TZID are treated as local time
         return DateTime.TryParseExact(value, "yyyyMMdd'T'HHmmss", inv, DateTimeStyles.None, out date);
     }
 

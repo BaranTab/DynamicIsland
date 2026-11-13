@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using DynamicIsland.Localization;
 using DynamicIsland.Services;
 
 namespace DynamicIsland.Views.Pages;
@@ -10,8 +11,8 @@ namespace DynamicIsland.Views.Pages;
 public sealed record NoteRow(string Id, string Title, string Detail, Brush Background);
 
 /// <summary>
-/// Hızlı not defteri. Yazdıkça 0.6 sn sonra otomatik kaydeder.
-/// Ada normalde odak almaz; yazmaya başlayınca pencere geçici olarak klavye alabilir hale gelir.
+/// A quick notepad that saves automatically 0.6 s after you stop typing.
+/// The island normally never takes focus; when you start typing, the window temporarily accepts keyboard input.
 /// </summary>
 public partial class NotesPage : UserControl
 {
@@ -35,11 +36,12 @@ public partial class NotesPage : UserControl
         {
             _saveTimer.Stop();
             NotesStore.Save(_notes);
-            SavedText.Text = $"kaydedildi {DateTime.Now:HH:mm}";
+            SavedText.Text = Loc.T("NotesSaved", DateTime.Now.ToString("HH:mm"));
             RenderList();
         };
 
         LoadCurrent();
+        Loc.Instance.LanguageChanged += (_, _) => RenderList();
     }
 
     private void LoadCurrent()
@@ -73,7 +75,7 @@ public partial class NotesPage : UserControl
 
         _current.Text = Editor.Text;
         _current.Updated = DateTime.Now;
-        SavedText.Text = "yazılıyor…";
+        SavedText.Text = Loc.T("NotesTyping");
 
         _saveTimer.Stop();
         _saveTimer.Start();
@@ -90,7 +92,7 @@ public partial class NotesPage : UserControl
 
     private void New_Click(object sender, RoutedEventArgs e)
     {
-        // Zaten boş bir not açıksa yenisini açma
+        // Don't create another note if the current one is still empty
         if (!string.IsNullOrWhiteSpace(_current.Text))
         {
             _current = new Note();
@@ -107,7 +109,7 @@ public partial class NotesPage : UserControl
         _current = _notes.OrderByDescending(n => n.Updated).First();
 
         NotesStore.Save(_notes);
-        SavedText.Text = "silindi";
+        SavedText.Text = Loc.T("NotesDeleted");
         LoadCurrent();
     }
 

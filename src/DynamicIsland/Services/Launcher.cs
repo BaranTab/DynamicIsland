@@ -3,19 +3,26 @@ using System.IO;
 
 namespace DynamicIsland.Services;
 
-/// <summary>Dış uygulamaları ve adresleri açar.</summary>
+/// <summary>Opens external apps and web addresses.</summary>
 public static class Launcher
 {
-    public static void OpenUrl(string url) =>
+    public static void OpenUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return;
+
+        // "www.gmail.com" without a scheme would otherwise fail to open
+        if (!url.Contains("://")) url = "https://" + url;
+
         TryStart(new ProcessStartInfo(url) { UseShellExecute = true });
+    }
 
     public static void OpenSettingsFile()
     {
-        SettingsService.Load(); // Yoksa oluştursun
+        SettingsService.Load(); // Creates the file if it doesn't exist yet
         TryStart(new ProcessStartInfo("notepad.exe", $"\"{SettingsService.FilePath}\"") { UseShellExecute = true });
     }
 
-    /// <summary>Klasörde yeni bir terminal açıp "claude" komutunu çalıştırır.</summary>
+    /// <summary>Opens a new terminal in the folder and runs "claude" there.</summary>
     public static void OpenClaudeCode(string path)
     {
         if (!Directory.Exists(path)) return;
@@ -23,7 +30,7 @@ public static class Launcher
 
         try
         {
-            // Windows Terminal varsa onu kullan
+            // Prefer Windows Terminal when it's installed
             Process.Start(new ProcessStartInfo("wt.exe", $"-d \"{dir}\" cmd /k claude") { UseShellExecute = true });
         }
         catch
@@ -32,7 +39,7 @@ public static class Launcher
         }
     }
 
-    /// <summary>VS Code'u açar; path verilirse o klasörü/dosyayı açar.</summary>
+    /// <summary>Opens VS Code, optionally with a folder or file.</summary>
     public static void OpenInVsCode(string? path, string? codePath = null, bool newWindow = false)
     {
         var args = new List<string>();
@@ -55,8 +62,8 @@ public static class Launcher
         string?[] candidates =
         {
             configured,
-            Path.Combine(localAppData, "Programs", "Microsoft VS Code", "Code.exe"),
-            Path.Combine(programFiles, "Microsoft VS Code", "Code.exe")
+            Path.Combine(localAppData, "Programs", "Microsoft VS Code", "Code.exe"), // user install (most common)
+            Path.Combine(programFiles, "Microsoft VS Code", "Code.exe")              // system install
         };
 
         return candidates.FirstOrDefault(p => !string.IsNullOrWhiteSpace(p) && File.Exists(p));
@@ -65,6 +72,6 @@ public static class Launcher
     private static void TryStart(ProcessStartInfo info)
     {
         try { Process.Start(info); }
-        catch { /* Uygulama bulunamadı */ }
+        catch { /* App not found */ }
     }
 }

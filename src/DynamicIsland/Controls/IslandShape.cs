@@ -4,19 +4,19 @@ using System.Windows.Media;
 namespace DynamicIsland.Controls;
 
 /// <summary>
-/// Ekranın üst kenarına "sıvı" gibi bağlanan cam görünümlü ada şekli.
+/// The glass island shape that flows "liquid-like" out of the top edge of the screen.
 ///
-///   ‾‾╲________________╱‾‾   ← üst köşeler içe kıvrılır (FilletRadius), ekran kenarına akar
+///   ‾‾╲________________╱‾‾   ← top corners curve inwards (FilletRadius) into the screen edge
 ///      |              |
-///      ╰──────────────╯      ← alt köşeler yuvarlak (BottomRadius)
+///      ╰──────────────╯      ← rounded bottom corners (BottomRadius)
 ///
-/// Cam efekti üç katmandan oluşur:
-///   1) Koyu, hafif saydam taban (aşağı doğru vurgu rengine kayar)
-///   2) Alttan yukarı doğru vuran renkli parıltı (GlowStrength)
-///   3) Kenarlarda ince parlak çizgi (camın kenarı)
+/// The glass effect has three layers:
+///   1) A dark, slightly translucent base (fading into the accent colour at the bottom)
+///   2) A coloured glow shining up from below (GlowStrength)
+///   3) A thin bright line along the edges (the edge of the glass)
 ///
-/// Tüm değerler DependencyProperty olduğu için animasyonla değiştirilebilir.
-/// AccentColor bir ColorAnimation ile yumuşakça değiştirilir: "cam, çalan şeyin rengini alır".
+/// Every value is a DependencyProperty, so all of them can be animated.
+/// AccentColor is changed smoothly with a ColorAnimation: "the glass takes the colour of what's playing".
 /// </summary>
 public sealed class IslandShape : FrameworkElement
 {
@@ -47,7 +47,7 @@ public sealed class IslandShape : FrameworkElement
         var accent = AccentColor;
         double glow = Math.Clamp(GlowStrength, 0, 1);
 
-        // 1) Cam tabanı: üstte neredeyse siyah, altta vurgu renginin koyu tonu
+        // 1) Glass base: almost black at the top, a dark shade of the accent at the bottom
         var baseBrush = new LinearGradientBrush(
             Color.FromArgb(0xF4, 0x09, 0x09, 0x0C),
             Darken(accent, 0.62, alpha: 0xEA),
@@ -55,7 +55,7 @@ public sealed class IslandShape : FrameworkElement
         baseBrush.Freeze();
         dc.DrawGeometry(baseBrush, null, geometry);
 
-        // 2) Alttan gelen ışık
+        // 2) Light coming up through the glass
         if (glow > 0.01)
         {
             var glowBrush = new RadialGradientBrush
@@ -72,7 +72,7 @@ public sealed class IslandShape : FrameworkElement
             dc.DrawGeometry(glowBrush, null, geometry);
         }
 
-        // 3) Cam kenarı: üstte görünmez, aşağı doğru belirginleşen ince çizgi
+        // 3) Glass edge: invisible at the top, a thin line that gets stronger towards the bottom
         var edgeBrush = new LinearGradientBrush(
             Color.FromArgb(0x00, 0xFF, 0xFF, 0xFF),
             Color.FromArgb((byte)(0x30 + 0x30 * glow), 0xFF, 0xFF, 0xFF),
@@ -97,14 +97,14 @@ public sealed class IslandShape : FrameworkElement
         using (var ctx = geometry.Open())
         {
             ctx.BeginFigure(new Point(left - f, 0), isFilled: true, isClosed: true);
-            ctx.LineTo(new Point(right + f, 0), true, true);                                       // üst kenar
-            ctx.ArcTo(new Point(right, f), new Size(f, f), 0, false, SweepDirection.Counterclockwise, true, true); // sağ üst sıvı geçiş
+            ctx.LineTo(new Point(right + f, 0), true, true);                                       // top edge
+            ctx.ArcTo(new Point(right, f), new Size(f, f), 0, false, SweepDirection.Counterclockwise, true, true); // top-right liquid curve
             ctx.LineTo(new Point(right, h - r), true, true);
-            ctx.ArcTo(new Point(right - r, h), new Size(r, r), 0, false, SweepDirection.Clockwise, true, true);    // sağ alt
+            ctx.ArcTo(new Point(right - r, h), new Size(r, r), 0, false, SweepDirection.Clockwise, true, true);    // bottom-right
             ctx.LineTo(new Point(left + r, h), true, true);
-            ctx.ArcTo(new Point(left, h - r), new Size(r, r), 0, false, SweepDirection.Clockwise, true, true);     // sol alt
+            ctx.ArcTo(new Point(left, h - r), new Size(r, r), 0, false, SweepDirection.Clockwise, true, true);     // bottom-left
             ctx.LineTo(new Point(left, f), true, true);
-            ctx.ArcTo(new Point(left - f, 0), new Size(f, f), 0, false, SweepDirection.Counterclockwise, true, true); // sol üst sıvı geçiş
+            ctx.ArcTo(new Point(left - f, 0), new Size(f, f), 0, false, SweepDirection.Counterclockwise, true, true); // top-left liquid curve
         }
         geometry.Freeze();
         return geometry;

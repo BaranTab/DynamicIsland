@@ -5,8 +5,8 @@ using System.Windows.Media.Imaging;
 namespace DynamicIsland.Services;
 
 /// <summary>
-/// Albüm kapağından baskın ve "canlı" rengi çıkarır.
-/// Doygun ve parlak pikseller daha çok ağırlık alır, gri tonlar neredeyse yok sayılır.
+/// Extracts the dominant, "vivid" colour from album art.
+/// Saturated, bright pixels get more weight; greys are almost ignored.
 /// </summary>
 public static class ColorExtractor
 {
@@ -19,7 +19,7 @@ public static class ColorExtractor
             var image = new BitmapImage();
             image.BeginInit();
             image.CacheOption = BitmapCacheOption.OnLoad;
-            image.DecodePixelWidth = 32; // Küçük boyut yeterli ve hızlı
+            image.DecodePixelWidth = 32; // A tiny thumbnail is enough and fast
             image.StreamSource = new MemoryStream(bytes);
             image.EndInit();
 
@@ -43,7 +43,7 @@ public static class ColorExtractor
 
             var (hue, sat, val) = ToHsv(r / total, g / total, b / total);
 
-            // Arayüzde hoş dursun diye doygunluğu ve parlaklığı makul aralığa çek
+            // Clamp saturation and brightness to a range that looks good in the UI
             sat = Math.Clamp(sat * 1.2, 0.35, 0.8);
             val = Math.Clamp(val * 1.3, 0.55, 0.85);
 

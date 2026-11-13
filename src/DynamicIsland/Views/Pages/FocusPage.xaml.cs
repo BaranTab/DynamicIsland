@@ -23,7 +23,7 @@ public partial class FocusPage : UserControl
 
     private void OnVmChanged(object? sender, PropertyChangedEventArgs e) => SyncRuler();
 
-    /// <summary>Cetvel, çalışırken kalan süreyi gösterir ve kilitlenir.</summary>
+    /// <summary>While running, the ruler shows the remaining time and is locked.</summary>
     private void SyncRuler()
     {
         if (this.Vm()?.Focus is not { } focus) return;

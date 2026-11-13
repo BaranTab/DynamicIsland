@@ -4,8 +4,8 @@ using Windows.Storage.Streams;
 namespace DynamicIsland.Modules;
 
 /// <summary>
-/// Windows'un Global System Media Transport Controls API'si ile çalan medyayı okur.
-/// Spotify, tarayıcıdaki YouTube, Apple Music vb. (medya tuşlarını destekleyen her uygulama) çalışır.
+/// Reads what's playing through Windows' Global System Media Transport Controls API.
+/// Works with Spotify, YouTube in the browser, Apple Music, etc. (any app that supports the media keys).
 /// </summary>
 public sealed class MediaModule : IIslandModule
 {
@@ -26,7 +26,7 @@ public sealed class MediaModule : IIslandModule
     public TimeSpan Duration { get; private set; }
     private TimeSpan _position;
 
-    /// <summary>Uygulamalar konumu seyrek bildirir; çalarken aradaki süreyi biz ekliyoruz.</summary>
+    /// <summary>Apps report the position rarely, so while playing we add the time elapsed since the last report.</summary>
     public TimeSpan CurrentPosition
     {
         get
@@ -115,7 +115,7 @@ public sealed class MediaModule : IIslandModule
         }
         catch
         {
-            // Okuma sırasında oturum kapanabilir; sessizce geç.
+            // The session may close while we're reading it; ignore.
         }
 
         Changed?.Invoke(this, EventArgs.Empty);

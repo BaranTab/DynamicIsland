@@ -7,8 +7,8 @@ namespace DynamicIsland.Services;
 internal static class WindowHelper
 {
     private const int GWL_EXSTYLE = -20;
-    private const int WS_EX_TOOLWINDOW = 0x00000080;  // Alt+Tab'da görünmesin
-    private const int WS_EX_NOACTIVATE = 0x08000000;  // Tıklayınca odağı çalmasın
+    private const int WS_EX_TOOLWINDOW = 0x00000080;  // Hidden from Alt+Tab
+    private const int WS_EX_NOACTIVATE = 0x08000000;  // Clicking it doesn't steal focus
 
     [DllImport("user32.dll")]
     private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
@@ -27,7 +27,7 @@ internal static class WindowHelper
     }
 
     /// <summary>
-    /// Not yazarken pencerenin klavye odağı alabilmesi için NOACTIVATE geçici olarak kapatılır.
+    /// NOACTIVATE is turned off temporarily while typing a note, so the window can receive the keyboard.
     /// </summary>
     public static void SetNoActivate(Window window, bool enabled)
     {
@@ -38,7 +38,7 @@ internal static class WindowHelper
     }
 
     /// <summary>
-    /// Tam ekran bir uygulama (oyun, video, sunum) çalışıyorsa true döner.
+    /// True while a full-screen app (game, video, presentation) is running.
     /// 2 = QUNS_BUSY, 3 = QUNS_RUNNING_D3D_FULL_SCREEN, 4 = QUNS_PRESENTATION_MODE
     /// </summary>
     public static bool IsFullscreenAppRunning()

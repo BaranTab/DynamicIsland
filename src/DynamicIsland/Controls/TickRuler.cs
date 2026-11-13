@@ -6,8 +6,8 @@ using System.Windows.Media;
 namespace DynamicIsland.Controls;
 
 /// <summary>
-/// Odak zamanlayıcısı için cetvel görünümlü dakika seçici (0–60).
-/// Sürükleyerek veya tıklayarak süre seçilir.
+/// A ruler-style minute picker (0–60) for the focus timer.
+/// Drag or click to choose a duration.
 /// </summary>
 public sealed class TickRuler : FrameworkElement
 {
@@ -24,7 +24,7 @@ public sealed class TickRuler : FrameworkElement
     public double Value { get => (double)GetValue(ValueProperty); set => SetValue(ValueProperty, value); }
     public double Maximum { get => (double)GetValue(MaximumProperty); set => SetValue(MaximumProperty, value); }
 
-    /// <summary>Kullanıcı değeri değiştirdiğinde (dakika).</summary>
+    /// <summary>Raised when the user changes the value (in minutes).</summary>
     public event EventHandler<double>? ValueChanged;
 
     protected override void OnRender(DrawingContext dc)
@@ -34,7 +34,7 @@ public sealed class TickRuler : FrameworkElement
         int max = (int)Maximum;
         if (usable <= 0 || max <= 0) return;
 
-        // Tüm alan fareyi yakalasın
+        // Make the whole area hit-testable
         dc.DrawRectangle(Brushes.Transparent, null, new Rect(RenderSize));
 
         var minorPen = new Pen(new SolidColorBrush(Color.FromArgb(0x55, 0xFF, 0xFF, 0xFF)), 1);
@@ -60,7 +60,7 @@ public sealed class TickRuler : FrameworkElement
             }
         }
 
-        // Seçili değer göstergesi
+        // Selected value indicator
         double vx = Padding + usable * Math.Clamp(Value, 0, Maximum) / Maximum;
         dc.DrawRoundedRectangle(Brushes.White, null, new Rect(vx - 1.5, 0, 3, 28), 1.5, 1.5);
     }

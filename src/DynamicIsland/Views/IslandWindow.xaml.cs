@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using DynamicIsland.Controls;
+using DynamicIsland.Localization;
 using DynamicIsland.Services;
 using DynamicIsland.ViewModels;
 
@@ -15,20 +16,20 @@ namespace DynamicIsland.Views;
 
 public partial class IslandWindow : Window
 {
-    // ---- Boyutlar ----
+    // ---- Sizes ----
     private const double CompactHeight = 32, CompactRadius = 14, CompactFillet = 10;
     private const double ExpandedWidth = 680, ExpandedHeight = 290, ExpandedRadius = 36, ExpandedFillet = 22;
 
-    // ---- Sayfalar ----
+    // ---- Pages ----
     public const int PageHome = 0, PageMusic = 1, PageFocus = 2, PageWeather = 3, PageMail = 4,
                      PageClaude = 5, PageVsCode = 6, PageNotes = 7, PageCalendar = 8, PageCount = 9;
     private const double PageWidth = 636;
 
-    // ---- Renkler ----
+    // ---- Colours ----
     private static readonly Color NeutralAccent = Color.FromRgb(0x4A, 0x44, 0x58);
     private static readonly Color FocusAccent = Color.FromRgb(0x7B, 0x5C, 0xFF);
 
-    /// <summary>Kendine özgü rengi olan sayfalar.</summary>
+    /// <summary>Pages that have their own accent colour.</summary>
     private static readonly Dictionary<int, Color> PageAccents = new()
     {
         [PageFocus] = FocusAccent,
@@ -39,7 +40,7 @@ public partial class IslandWindow : Window
         [PageCalendar] = Color.FromRgb(0x3F, 0xB6, 0x8B)
     };
 
-    private readonly MainViewModel _vm = new(SettingsService.Load());
+    private readonly MainViewModel _vm = new(App.Settings);
     private readonly DispatcherTimer _fullscreenTimer = new() { Interval = TimeSpan.FromSeconds(2) };
     private readonly DispatcherTimer _collapseTimer = new();
     private readonly SolidColorBrush _accentBrush = new(Lighten(NeutralAccent, 0.4));
@@ -52,7 +53,7 @@ public partial class IslandWindow : Window
     private double _currentGlow;
     private bool _textInput;
 
-    // Sürükleme / kaydırma
+    // Dragging / scrolling
     private Point? _dragStart;
     private bool _dragging;
     private int _wheelAccumulator, _hWheelAccumulator;
@@ -70,27 +71,50 @@ public partial class IslandWindow : Window
         _collapseTimer.Tick += CollapseTimer_Tick;
         Deactivated += (_, _) =>
         {
-            // Not yazarken başka bir yere tıklandı
+            // The user clicked somewhere else while typing a note
             if (!_textInput) return;
             EndTextInput();
             if (!IslandRoot.IsMouseOver) StartCollapseTimer();
         };
 
+        BuildLanguageMenu();
         Loaded += OnLoaded;
+    }
+
+    /// <summary>Fills ⋯ → Language with the available languages and ticks the current one.</summary>
+    private void BuildLanguageMenu()
+    {
+        LanguageMenu.Items.Clear();
+        foreach (var language in Loc.Languages)
+        {
+            var item = new MenuItem
+            {
+                Header = language.NativeName,
+                IsCheckable = true,
+                IsChecked = language.Code == Loc.Instance.Language
+            };
+            item.Click += (_, _) =>
+            {
+                Loc.Instance.SetLanguage(language.Code);
+                SettingsService.SaveLanguage(language.Code);
+                BuildLanguageMenu();
+            };
+            LanguageMenu.Items.Add(item);
+        }
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         WindowHelper.MakeToolWindow(this);
 
-        // Touchpad'deki yatay kaydırma (WM_MOUSEHWHEEL) WPF'te hazır gelmiyor, kendimiz yakalıyoruz
+        // WPF has no event for horizontal touchpad scrolling (WM_MOUSEHWHEEL), so we hook it ourselves
         HwndSource.FromHwnd(new WindowInteropHelper(this).Handle)?.AddHook(WndProc);
 
-        // Ekranın en üstüne, ortaya yapıştır
+        // Stick to the top centre of the screen
         Left = (SystemParameters.PrimaryScreenWidth - Width) / 2;
         Top = 0;
 
-        // Tam ekran uygulama varken adayı gizle
+        // Hide the island while a full-screen app is running
         _fullscreenTimer.Tick += (_, _) =>
             Visibility = WindowHelper.IsFullscreenAppRunning() ? Visibility.Hidden : Visibility.Visible;
         _fullscreenTimer.Start();
@@ -100,7 +124,7 @@ public partial class IslandWindow : Window
     }
 
     // =====================================================================
-    //  Durum değişince: kapalı adanın modu, ekolayzer, cetvel, renk
+    //  State changes: compact mode, equalizer, accent colour
     // =====================================================================
 
     private void OnStateChanged()
@@ -157,7 +181,7 @@ public partial class IslandWindow : Window
         }
     }
 
-    /// <summary>Cam, o an öne çıkan şeyin rengini alır.</summary>
+    /// <summary>The glass takes the colour of whatever is in focus right now.</summary>
     private void UpdateAccent()
     {
         Color target;
@@ -209,7 +233,7 @@ public partial class IslandWindow : Window
         (byte)(c.B + (255 - c.B) * t));
 
     // =====================================================================
-    //  Açılma / kapanma
+    //  Expand / collapse
     // =====================================================================
 
     private void Island_MouseEnter(object sender, MouseEventArgs e)
@@ -229,7 +253,7 @@ public partial class IslandWindow : Window
 
     private void CollapseTimer_Tick(object? sender, EventArgs e)
     {
-        // Sürükleme veya menü sürüyorsa beklemeye devam et
+        // Keep waiting while dragging, typing or a menu is open
         if (_textInput || Mouse.Captured != null || MoreButton.ContextMenu?.IsOpen == true) return;
 
         _collapseTimer.Stop();
@@ -266,8 +290,8 @@ public partial class IslandWindow : Window
     }
 
     /// <summary>
-    /// Büyürken: önce yanlara yayılır, sonra elastik şekilde aşağı damlar.
-    /// Küçülürken: önce yukarı çekilir, sonra daralır.
+    /// Growing: it first spreads sideways, then drops down with an elastic bounce.
+    /// Shrinking: it first pulls up, then narrows.
     /// </summary>
     private void AnimateShape(double width, double height, double radius, double fillet, bool growing)
     {
@@ -304,14 +328,14 @@ public partial class IslandWindow : Window
     }
 
     // =====================================================================
-    //  Sayfalar ve sekmeler
+    //  Pages and tabs
     // =====================================================================
 
     public void GoToPage(int index)
     {
         _page = Math.Clamp(index, 0, PageCount - 1);
 
-        // Bu sayfalar açılınca listeleri tazele
+        // Refresh these lists when their page is opened
         if (_page == PageClaude) _ = _vm.Claude.RefreshAsync();
         else if (_page == PageVsCode) _ = _vm.VsCode.RefreshAsync();
 
@@ -330,7 +354,7 @@ public partial class IslandWindow : Window
         var duration = TimeSpan.FromMilliseconds(animate ? 260 : 0);
         var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
 
-        // Üstteki noktalar: aktif olan uzar
+        // Header dots: the active one stretches
         foreach (var child in Dots.Children)
         {
             if (child is not Border dot) continue;
@@ -339,7 +363,7 @@ public partial class IslandWindow : Window
             dot.BeginAnimation(OpacityProperty, new DoubleAnimation(active ? 0.95 : 0.35, duration));
         }
 
-        // Alttaki sekmeler: aktif olan hap şekline gelip etiketini gösterir
+        // Bottom tabs: the active one becomes a pill and shows its label
         foreach (var child in Tabs.Children)
         {
             if (child is not Border tab || tab.Child is not StackPanel content || content.Children.Count < 2) continue;
@@ -360,7 +384,7 @@ public partial class IslandWindow : Window
     private static int TagIndex(FrameworkElement element) =>
         element.Tag is string s && int.TryParse(s, out int i) ? i : -1;
 
-    /// <summary>Sekmeler, noktalar ve ana sayfa kartları bunu kullanır.</summary>
+    /// <summary>Used by the tabs and the header dots.</summary>
     private void Navigate_Click(object sender, MouseButtonEventArgs e)
     {
         if (_dragging) return;
@@ -368,11 +392,11 @@ public partial class IslandWindow : Window
             GoToPage(index);
     }
 
-    // --- Fareyle sürükleme (telefondaki swipe gibi) ---
+    // --- Mouse drag (like swiping on a phone) ---
 
     private void Viewport_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        // Cetvelin üstünde sürükleme sayfa değiştirmesin
+        // Dragging on the ruler or selecting text must not switch pages
         if (IsWithin<TickRuler>(e.OriginalSource) || IsWithin<TextBoxBase>(e.OriginalSource)) return;
 
         _dragStart = e.GetPosition(PagesViewport);
@@ -388,7 +412,7 @@ public partial class IslandWindow : Window
         if (!_dragging && Math.Abs(dx) > 8)
         {
             _dragging = true;
-            PagesViewport.CaptureMouse(); // Altındaki butonun tıklaması iptal olur
+            PagesViewport.CaptureMouse(); // Cancels the click on the button underneath
         }
 
         if (_dragging)
@@ -396,7 +420,7 @@ public partial class IslandWindow : Window
             double x = -_page * PageWidth + dx;
             double min = -(PageCount - 1) * PageWidth;
 
-            // Kenarlarda "lastik" direnci
+            // "Rubber band" resistance at the edges
             if (x > 0) x *= 0.3;
             else if (x < min) x = min + (x - min) * 0.3;
 
@@ -415,11 +439,11 @@ public partial class IslandWindow : Window
 
             if (dx < -PageWidth * 0.18) GoToPage(_page + 1);
             else if (dx > PageWidth * 0.18) GoToPage(_page - 1);
-            else GoToPage(_page); // Yerine geri yaylan
+            else GoToPage(_page); // Spring back into place
 
             e.Handled = true;
             _dragStart = null;
-            // Kartın tıklama olayı bu bırakmayı görmesin diye bir sonraki karede sıfırla
+            // Reset on the next frame so this release doesn't count as a click
             Dispatcher.InvokeAsync(() => _dragging = false, DispatcherPriority.Input);
 
             if (!IslandRoot.IsMouseOver) StartCollapseTimer();
@@ -443,7 +467,7 @@ public partial class IslandWindow : Window
         return false;
     }
 
-    // --- Fare tekerleği ---
+    // --- Mouse wheel ---
 
     private void Viewport_MouseWheel(object sender, MouseWheelEventArgs e)
     {
@@ -456,7 +480,7 @@ public partial class IslandWindow : Window
         e.Handled = true;
     }
 
-    // --- Touchpad yatay kaydırma (iki parmak sağa/sola) ---
+    // --- Horizontal touchpad scrolling (two fingers left/right) ---
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
@@ -476,7 +500,7 @@ public partial class IslandWindow : Window
         return IntPtr.Zero;
     }
 
-    /// <summary>Touchpad çok hızlı olay gönderdiği için sayfa geçişlerini sınırlar.</summary>
+    /// <summary>Touchpads send events very quickly, so page changes are throttled.</summary>
     private void ScrollPage(int direction)
     {
         if ((DateTime.Now - _lastScrollPage).TotalMilliseconds < 300) return;
@@ -485,7 +509,7 @@ public partial class IslandWindow : Window
     }
 
     // =====================================================================
-    //  Butonlar
+    //  Buttons
     // =====================================================================
 
     private async void PlayPause_Click(object sender, RoutedEventArgs e) => await _vm.Media.TogglePlayPauseAsync();
@@ -495,7 +519,7 @@ public partial class IslandWindow : Window
     private void FocusStartPause_Click(object sender, RoutedEventArgs e) => _vm.Focus.ToggleStartPause();
     private void FocusReset_Click(object sender, RoutedEventArgs e) => _vm.Focus.Reset();
 
-    /// <summary>Odak süresi bitince ada açılır, ses çalar, birkaç saniye sonra kendiliğinden kapanır.</summary>
+    /// <summary>When the focus timer ends, the island opens, plays a sound and closes again after a few seconds.</summary>
     private void OnFocusCompleted()
     {
         SystemSounds.Asterisk.Play();
@@ -522,9 +546,9 @@ public partial class IslandWindow : Window
     private void Exit_Click(object sender, RoutedEventArgs e) => Application.Current.Shutdown();
 
     // =====================================================================
-    //  Klavye girişi (Notlar)
-    //  Ada normalde odak çalmaz (WS_EX_NOACTIVATE). Not yazarken bunu geçici
-    //  olarak kapatıp pencereyi etkinleştiriyoruz; başka yere tıklanınca geri açılıyor.
+    //  Keyboard input (Notes)
+    //  The island normally never takes focus (WS_EX_NOACTIVATE). While typing a note we
+    //  turn that off and activate the window; clicking elsewhere turns it back on.
     // =====================================================================
 
     public void BeginTextInput()

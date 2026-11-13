@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using DynamicIsland.Localization;
 using DynamicIsland.Services;
 using Microsoft.Win32;
 
@@ -22,7 +23,7 @@ public partial class VsCodePage : UserControl
 
     private void OpenFolder_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFolderDialog { Title = "VS Code'da açılacak klasör" };
+        var dialog = new OpenFolderDialog { Title = Loc.T("VsCodeOpenFolderTitle") };
         if (dialog.ShowDialog() == true)
             Launcher.OpenInVsCode(dialog.FolderName, CodePath);
     }

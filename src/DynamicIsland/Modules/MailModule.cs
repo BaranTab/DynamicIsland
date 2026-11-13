@@ -1,3 +1,4 @@
+using DynamicIsland.Localization;
 using DynamicIsland.Services;
 using MailKit;
 using MailKit.Net.Imap;
@@ -9,8 +10,8 @@ namespace DynamicIsland.Modules;
 public sealed record MailItem(string From, string Initial, string Subject, string TimeText, double UnreadDotOpacity);
 
 /// <summary>
-/// IMAP ile gelen kutusunu okur (salt okunur; e-postaları "okundu" işaretlemez).
-/// Gmail için: 2 adımlı doğrulamayı aç → Google Hesabı → Uygulama şifreleri → oluşturduğun şifreyi settings.json'a yaz.
+/// Reads the inbox over IMAP in read-only mode (messages are never marked as read).
+/// Gmail: turn on 2-Step Verification → Google Account → App passwords → put the generated password in settings.json.
 /// </summary>
 public sealed class MailModule : IIslandModule
 {
@@ -20,7 +21,7 @@ public sealed class MailModule : IIslandModule
 
     public MailModule(MailSettings settings) => _settings = settings;
 
-    public string Name => "Posta";
+    public string Name => "Mail";
     public int Priority => 1;
     public bool IsActive => UnreadCount > 0;
 
@@ -29,7 +30,10 @@ public sealed class MailModule : IIslandModule
     public string WebUrl => _settings.WebUrl;
     public int? UnreadCount { get; private set; }
     public IReadOnlyList<MailItem> Messages { get; private set; } = Array.Empty<MailItem>();
-    public string Status { get; private set; } = "";
+
+    /// <summary>Translation key of the current status (translated in the view model so it follows the language).</summary>
+    public string StatusKey { get; private set; } = "";
+    public string StatusArgument { get; private set; } = "";
 
     public event EventHandler? Changed;
 
@@ -44,14 +48,14 @@ public sealed class MailModule : IIslandModule
     {
         if (!IsConfigured)
         {
-            Status = "Hesap bağlı değil";
+            SetStatus("MailStatusNotConnected");
             Changed?.Invoke(this, EventArgs.Empty);
             return;
         }
         if (_busy) return;
         _busy = true;
 
-        Status = "Güncelleniyor…";
+        SetStatus("MailStatusUpdating");
         Changed?.Invoke(this, EventArgs.Empty);
 
         try
@@ -77,27 +81,27 @@ public sealed class MailModule : IIslandModule
                 {
                     var sender = m.Envelope?.From?.Mailboxes.FirstOrDefault();
                     var name = !string.IsNullOrWhiteSpace(sender?.Name) ? sender!.Name : sender?.Address;
-                    if (string.IsNullOrWhiteSpace(name)) name = "Bilinmeyen";
+                    if (string.IsNullOrWhiteSpace(name)) name = Loc.T("MailUnknownSender");
 
-                    var subject = string.IsNullOrWhiteSpace(m.Envelope?.Subject) ? "(Konu yok)" : m.Envelope!.Subject;
+                    var subject = string.IsNullOrWhiteSpace(m.Envelope?.Subject) ? Loc.T("MailNoSubject") : m.Envelope!.Subject;
                     var date = (m.InternalDate ?? m.Envelope?.Date ?? DateTimeOffset.Now).LocalDateTime;
                     bool isUnread = m.Flags is MessageFlags flags && !flags.HasFlag(MessageFlags.Seen);
 
-                    list.Add(new MailItem(name, name[..1].ToUpper(Format.Tr), subject, FormatTime(date), isUnread ? 1 : 0));
+                    list.Add(new MailItem(name, name[..1].ToUpper(Loc.Instance.Culture), subject, FormatTime(date), isUnread ? 1 : 0));
                 }
             }
 
             Messages = list;
-            Status = $"Güncellendi {DateTime.Now:HH:mm}";
+            SetStatus("MailStatusUpdated", DateTime.Now.ToString("HH:mm"));
             await client.DisconnectAsync(true);
         }
         catch (AuthenticationException)
         {
-            Status = "Giriş başarısız: kullanıcı adını ve uygulama şifresini kontrol et";
+            SetStatus("MailStatusAuthFailed");
         }
         catch (Exception ex)
         {
-            Status = "Bağlanamadı: " + ex.Message;
+            SetStatus("MailStatusFailed", ex.Message);
         }
         finally
         {
@@ -107,8 +111,14 @@ public sealed class MailModule : IIslandModule
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
+    private void SetStatus(string key, string argument = "")
+    {
+        StatusKey = key;
+        StatusArgument = argument;
+    }
+
     private static string FormatTime(DateTime date) =>
-        date.Date == DateTime.Today ? date.ToString("HH:mm") : date.ToString("d MMM", Format.Tr);
+        date.Date == DateTime.Today ? date.ToString("HH:mm") : date.ToString("d MMM", Loc.Instance.Culture);
 
     public void Dispose() => _timer.Dispose();
 }

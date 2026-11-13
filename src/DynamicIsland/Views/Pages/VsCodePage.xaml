@@ -1,6 +1,7 @@
 <UserControl x:Class="DynamicIsland.Views.Pages.VsCodePage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:DynamicIsland.Localization"
              Width="636" Height="190" Foreground="White">
     <UserControl.Resources>
         <SolidColorBrush x:Key="CodeBlue" Color="#3B9BFF" />
@@ -13,7 +14,7 @@
             <ColumnDefinition Width="200" />
         </Grid.ColumnDefinitions>
 
-        <!-- Sol: gezgin (explorer) görünümlü son çalışma alanları -->
+        <!-- Left: recent workspaces, styled like the Explorer sidebar -->
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -22,7 +23,7 @@
 
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="&#xE76C;" Style="{StaticResource IconGlyph}" FontSize="9" Opacity="0.6" Margin="0,0,6,0" />
-                <TextBlock Text="SON ÇALIŞMA ALANLARI" Style="{StaticResource Label}" />
+                <TextBlock Text="{loc:T VsCodeRecent}" Style="{StaticResource Label}" />
             </StackPanel>
 
             <ItemsControl Grid.Row="1" Margin="0,8,0,0" ItemsSource="{Binding VsCodeRecents}">
@@ -37,7 +38,7 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
-                                <!-- Sol kenarda ince mavi çizgi -->
+                                <!-- Thin blue line on the left edge -->
                                 <Border Width="3" CornerRadius="1.5" Background="{StaticResource CodeBlue}"
                                         Margin="-6,2,8,2" />
                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
@@ -59,11 +60,10 @@
             </ItemsControl>
 
             <TextBlock Grid.Row="1" Visibility="{Binding VsCodeEmptyVisibility}" FontSize="13" Opacity="0.55"
-                       TextWrapping="Wrap" VerticalAlignment="Center"
-                       Text="VS Code'da yakın zamanda açılmış bir klasör bulunamadı." />
+                       TextWrapping="Wrap" VerticalAlignment="Center" Text="{loc:T VsCodeEmpty}" />
         </Grid>
 
-        <!-- Sağ: VS Code kartı -->
+        <!-- Right: VS Code card -->
         <Border Grid.Column="2" CornerRadius="20" Padding="16,14">
             <Border.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
@@ -83,16 +83,16 @@
                 <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="&#xE943;" Style="{StaticResource IconGlyph}" FontSize="34" />
                     <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="Kod yazmaya" FontSize="14" FontWeight="SemiBold" />
-                        <TextBlock Text="devam et" FontSize="14" Opacity="0.75" />
+                        <TextBlock Text="{loc:T VsCodeTagline1}" FontSize="14" FontWeight="SemiBold" />
+                        <TextBlock Text="{loc:T VsCodeTagline2}" FontSize="14" Opacity="0.75" />
                     </StackPanel>
                 </StackPanel>
 
                 <StackPanel Grid.Row="2">
                     <Button Style="{StaticResource SmallPillButton}" HorizontalAlignment="Stretch"
-                            Content="Yeni pencere" Click="NewWindow_Click" />
+                            Content="{loc:T VsCodeNewWindow}" Click="NewWindow_Click" />
                     <Button Style="{StaticResource SmallGhostButton}" HorizontalAlignment="Stretch"
-                            Content="Klasör aç…" Margin="0,6,0,0" Click="OpenFolder_Click" />
+                            Content="{loc:T VsCodeOpenFolder}" Margin="0,6,0,0" Click="OpenFolder_Click" />
                 </StackPanel>
             </Grid>
         </Border>

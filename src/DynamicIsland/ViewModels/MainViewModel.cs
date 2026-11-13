@@ -1,14 +1,16 @@
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using DynamicIsland.Localization;
 using DynamicIsland.Modules;
 using DynamicIsland.Services;
 
 namespace DynamicIsland.ViewModels;
 
-/// <summary>Kapalı (compact) adanın ne gösterdiği.</summary>
+/// <summary>What the collapsed (compact) island shows.</summary>
 public enum IslandMode { Idle, Music, Timer }
 
 public sealed record DayCell(string Day, double Opacity, Visibility TodayVisibility, Visibility EventDotVisibility,
@@ -16,12 +18,15 @@ public sealed record DayCell(string Day, double Opacity, Visibility TodayVisibil
 
 public sealed record EventItem(string When, string Title);
 
+/// <summary>
+/// Connects the modules to the UI. Every module raises Changed; we then raise
+/// PropertyChanged with an empty name, which refreshes all bindings at once.
+/// </summary>
 public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 {
-    private static readonly System.Globalization.CultureInfo Tr = Format.Tr;
     private readonly List<IIslandModule> _modules;
     private byte[]? _lastThumbnail;
-    private (DateTime Day, int Version) _calendarStamp;
+    private (DateTime Day, int Version, string Language) _calendarStamp;
 
     public AppSettings Settings { get; }
 
@@ -36,6 +41,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    private static CultureInfo Culture => Loc.Instance.Culture;
+
     public MainViewModel(AppSettings settings)
     {
         Settings = settings;
@@ -48,27 +55,36 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         _modules = new List<IIslandModule> { Clock, Media, Weather, Focus, Mail, Calendar, Claude, VsCode };
         foreach (var module in _modules)
             module.Changed += (_, _) => Application.Current?.Dispatcher.InvokeAsync(Refresh);
+
+        // Texts built ahead of time ("2 h ago" etc.) are rebuilt in the new language
+        Loc.Instance.LanguageChanged += (_, _) =>
+        {
+            _ = Claude.RefreshAsync();
+            _ = VsCode.RefreshAsync();
+            Refresh();
+        };
     }
 
     public async Task StartAsync()
     {
-        // Modüller birbirini beklemesin (posta sunucusu yavaşsa saat donmasın)
+        // Modules don't wait for each other (a slow mail server must not freeze the clock)
         var tasks = _modules.Select(async module =>
         {
             try { await module.StartAsync(); }
-            catch { /* Bir modül çökerse diğerleri çalışmaya devam etsin */ }
+            catch { /* If one module fails, the others keep working */ }
         }).ToList();
+
         Refresh();
         await Task.WhenAll(tasks);
         Refresh();
     }
 
-    // =========================== Üst bilgi satırı ===========================
+    // =============================== Header ================================
 
-    public string TimeText => Clock.Now.ToString("HH:mm", Tr);
-    public string HeaderLeft => $"{Clock.Now.ToString("ddd dd MMM", Tr).ToUpper(Tr)}  /  {WeatherTemp}";
+    public string TimeText => Clock.Now.ToString("HH:mm", Culture);
+    public string HeaderLeft => $"{Clock.Now.ToString("ddd dd MMM", Culture).ToUpper(Culture)}  /  {WeatherTemp}";
 
-    // ============================== Kapalı ada ==============================
+    // ============================ Compact island ===========================
 
     public IslandMode Mode => Focus.IsRunning ? IslandMode.Timer
                             : Media.IsActive ? IslandMode.Music
@@ -78,13 +94,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public Visibility MusicCompactVisibility => Show(Mode == IslandMode.Music);
     public Visibility TimerCompactVisibility => Show(Mode == IslandMode.Timer);
 
-    // ================================ Medya =================================
+    // ================================ Media ================================
 
     public string MediaTitle => Media.Title;
     public string MediaArtist => Media.Artist;
     public string MediaSourceLabel => string.IsNullOrEmpty(Media.SourceApp)
-        ? "ŞİMDİ ÇALIYOR"
-        : $"ŞİMDİ ÇALIYOR  ·  {Media.SourceApp.ToUpper(Tr)}";
+        ? Loc.T("NowPlaying")
+        : $"{Loc.T("NowPlaying")}  ·  {Media.SourceApp.ToUpper(Culture)}";
     public string PlayPauseGlyph => Media.IsPlaying ? "" : ""; // Pause / Play
     public Visibility MediaVisibility => Show(Media.IsActive);
     public Visibility NoMediaVisibility => Show(!Media.IsActive);
@@ -98,7 +114,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public string TotalText => FormatTime(Media.Duration);
     public Visibility ProgressVisibility => Show(Media.Duration.TotalSeconds > 0);
 
-    // ================================= Odak =================================
+    // ================================ Focus ================================
 
     public string FocusRemainingText
     {
@@ -109,76 +125,77 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
-    public string FocusStatusText =>
-        Focus.IsRunning ? "Çalışıyor" :
-        Focus.IsFinished ? "Tamamlandı" :
-        Focus.IsPaused ? "Duraklatıldı" : "Hazır";
+    public string FocusStatusText => Loc.T(
+        Focus.IsRunning ? "FocusRunning" :
+        Focus.IsFinished ? "FocusFinished" :
+        Focus.IsPaused ? "FocusPaused" : "FocusReady");
 
     public string FocusEndText => Focus.IsRunning && Focus.EndsAt is DateTime end
-        ? $"Bitiş {end:HH:mm}"
-        : $"Şimdi başlarsan bitiş {(DateTime.Now + (Focus.IsFinished ? Focus.Duration : Focus.Remaining)):HH:mm}";
+        ? Loc.T("FocusEndsAt", end.ToString("HH:mm"))
+        : Loc.T("FocusEndsIfStarted", (DateTime.Now + (Focus.IsFinished ? Focus.Duration : Focus.Remaining)).ToString("HH:mm"));
 
-    public string FocusButtonText => Focus.IsRunning ? "Duraklat" : Focus.IsPaused ? "Devam" : "Başlat";
+    public string FocusButtonText => Loc.T(Focus.IsRunning ? "FocusPause" : Focus.IsPaused ? "FocusResume" : "FocusStart");
 
-    // ============================= Hava durumu ==============================
+    // =============================== Weather ===============================
 
     public string WeatherIcon => Weather.Icon;
     public string WeatherTemp => Weather.Temperature is double t ? $"{t:0}°" : "--°";
-    public string WeatherDescription => Weather.IsActive ? Weather.Description : "Yükleniyor…";
-    public string WeatherShort => Weather.IsActive ? $"{Weather.LocationName} · {Weather.Description}" : "Yükleniyor…";
-    public string WeatherLocationLabel => Weather.LocationName.ToUpper(Tr);
+    public string WeatherDescription => Weather.IsActive ? Loc.T(Weather.DescriptionKey) : Loc.T("Loading");
+    public string WeatherShort => Weather.IsActive ? $"{Weather.LocationName} · {Loc.T(Weather.DescriptionKey)}" : Loc.T("Loading");
+    public string WeatherLocationLabel => Weather.LocationName.ToUpper(Culture);
     public string WeatherMinMax => Weather.MaxTemperature is double max && Weather.MinTemperature is double min
-        ? $"En yüksek {max:0}°  ·  En düşük {min:0}°"
+        ? Loc.T("WeatherHighLow", max.ToString("0"), min.ToString("0"))
         : "";
     public IReadOnlyList<HourlyForecast> HourlyForecasts => Weather.Hourly;
 
-    /// <summary>Hava durumuna göre camın rengi.</summary>
+    /// <summary>The glass colour on the weather page, based on the conditions.</summary>
     public Color WeatherAccent => Weather.WeatherCode switch
     {
-        0 => Color.FromRgb(0xE0, 0x8A, 0x3C),                                      // güneşli
-        1 or 2 or 3 => Color.FromRgb(0x6F, 0x86, 0xA8),                            // parçalı bulutlu
-        45 or 48 => Color.FromRgb(0x84, 0x86, 0x8C),                               // sis
-        (>= 51 and <= 67) or (>= 80 and <= 82) => Color.FromRgb(0x3E, 0x6F, 0xB8), // yağmur
-        (>= 71 and <= 77) or 85 or 86 => Color.FromRgb(0x9F, 0xB7, 0xD6),         // kar
-        >= 95 => Color.FromRgb(0x5B, 0x4A, 0x9A),                                  // fırtına
+        0 => Color.FromRgb(0xE0, 0x8A, 0x3C),                                      // sunny
+        1 or 2 or 3 => Color.FromRgb(0x6F, 0x86, 0xA8),                            // partly cloudy
+        45 or 48 => Color.FromRgb(0x84, 0x86, 0x8C),                               // fog
+        (>= 51 and <= 67) or (>= 80 and <= 82) => Color.FromRgb(0x3E, 0x6F, 0xB8), // rain
+        (>= 71 and <= 77) or 85 or 86 => Color.FromRgb(0x9F, 0xB7, 0xD6),         // snow
+        >= 95 => Color.FromRgb(0x5B, 0x4A, 0x9A),                                  // storm
         _ => Color.FromRgb(0x6F, 0x7A, 0x8C)
     };
 
-    // ================================= Posta ================================
+    // ================================= Mail ================================
 
     public Visibility MailReadyVisibility => Show(Mail.IsConfigured);
     public Visibility MailSetupVisibility => Show(!Mail.IsConfigured);
     public Visibility MailEmptyVisibility => Show(Mail.IsConfigured && Mail.Messages.Count == 0);
     public string MailUnreadText => Mail.UnreadCount?.ToString() ?? "–";
-    public string MailUnreadCaption => !Mail.IsConfigured ? "Bağlı değil"
-                                     : Mail.UnreadCount is null ? "Yükleniyor…"
-                                     : "okunmamış";
-    public string MailAccount => Mail.IsConfigured ? Mail.Account : "Hesap eklenmedi";
-    public string MailStatus => Mail.Status;
+    public string MailUnreadCaption => Loc.T(!Mail.IsConfigured ? "MailNotConnected"
+                                           : Mail.UnreadCount is null ? "Loading"
+                                           : "MailUnread");
+    public string MailAccount => Mail.IsConfigured ? Mail.Account : Loc.T("MailNoAccount");
+    public string MailStatus => string.IsNullOrEmpty(Mail.StatusKey) ? "" : Loc.T(Mail.StatusKey, Mail.StatusArgument);
     public IReadOnlyList<MailItem> MailMessages => Mail.Messages;
 
-    // ================================ Takvim ================================
+    // =============================== Calendar ==============================
 
-    public string CalendarMonthTitle => Clock.Now.ToString("MMMM yyyy", Tr).ToUpper(Tr);
-    public string CalendarTodayTitle => Clock.Now.ToString("d MMMM, dddd", Tr);
+    public string CalendarMonthTitle => Clock.Now.ToString("MMMM yyyy", Culture).ToUpper(Culture);
+    public string CalendarTodayTitle => Clock.Now.ToString("d MMMM, dddd", Culture);
+    public IReadOnlyList<string> WeekDayNames { get; private set; } = Array.Empty<string>();
     public IReadOnlyList<DayCell> CalendarDays { get; private set; } = Array.Empty<DayCell>();
     public IReadOnlyList<EventItem> UpcomingEvents { get; private set; } = Array.Empty<EventItem>();
     public Visibility CalendarSetupVisibility => Show(!Calendar.IsConfigured);
     public Visibility NoEventsVisibility => Show(Calendar.IsConfigured && UpcomingEvents.Count == 0);
-    public string CalendarStatus => Calendar.Status;
+    public string CalendarStatus => string.IsNullOrEmpty(Calendar.StatusKey) ? "" : Loc.T(Calendar.StatusKey, Calendar.StatusArgument);
 
-    // ============================== Claude Code =============================
+    // ============================= Claude Code =============================
 
     public IReadOnlyList<ProjectItem> ClaudeProjects => Claude.Projects;
     public Visibility ClaudeEmptyVisibility => Show(Claude.Projects.Count == 0);
-    public string ClaudePromptFolder => Claude.Projects.FirstOrDefault()?.Name ?? "proje";
+    public string ClaudePromptFolder => Claude.Projects.FirstOrDefault()?.Name ?? Loc.T("ClaudeDefaultFolder");
 
-    // ================================ VS Code ===============================
+    // =============================== VS Code ===============================
 
     public IReadOnlyList<RecentItem> VsCodeRecents => VsCode.Recents;
     public Visibility VsCodeEmptyVisibility => Show(VsCode.Recents.Count == 0);
 
-    // ========================================================================
+    // =======================================================================
 
     private void Refresh()
     {
@@ -189,20 +206,24 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             AlbumAccent = ColorExtractor.FromImageBytes(_lastThumbnail);
         }
 
-        var stamp = (DateTime.Today, Calendar.Version);
+        var stamp = (DateTime.Today, Calendar.Version, Loc.Instance.Language);
         if (stamp != _calendarStamp)
         {
             _calendarStamp = stamp;
             RebuildCalendar();
         }
 
-        // Boş isim = tüm binding'leri yenile
+        // An empty property name refreshes every binding
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
     }
 
-    /// <summary>Pazartesiden başlayan 6 haftalık ay görünümü.</summary>
+    /// <summary>A six-week month view starting on Monday.</summary>
     private void RebuildCalendar()
     {
+        // Monday-first short day names in the current language (Mo, Tu… / Pt, Sa…)
+        var names = Culture.DateTimeFormat.ShortestDayNames;
+        WeekDayNames = Enumerable.Range(1, 7).Select(i => names[i % 7]).ToList();
+
         var today = DateTime.Today;
         var first = new DateTime(today.Year, today.Month, 1);
         int offset = ((int)first.DayOfWeek + 6) % 7;
@@ -226,10 +247,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
         UpcomingEvents = Calendar.Events.Take(3).Select(e =>
         {
-            var day = e.Start.Date == today ? "Bugün"
-                    : e.Start.Date == today.AddDays(1) ? "Yarın"
-                    : e.Start.ToString("ddd d MMM", Tr);
-            var time = e.AllDay ? "Tüm gün" : e.Start.ToString("HH:mm");
+            var day = e.Start.Date == today ? Loc.T("CalendarToday")
+                    : e.Start.Date == today.AddDays(1) ? Loc.T("CalendarTomorrow")
+                    : e.Start.ToString("ddd d MMM", Culture);
+            var time = e.AllDay ? Loc.T("CalendarAllDay") : e.Start.ToString("HH:mm");
             return new EventItem($"{day}  ·  {time}", e.Title);
         }).ToList();
     }

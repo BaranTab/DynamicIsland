@@ -9,9 +9,9 @@ namespace DynamicIsland.Modules;
 public sealed record RecentItem(string Name, string Path, string Detail, string Glyph);
 
 /// <summary>
-/// VS Code'un son açılan klasör/dosya listesini okur.
-/// Liste %AppData%\Code\User\globalStorage\state.vscdb (SQLite) içinde
-/// "history.recentlyOpenedPathsList" anahtarında JSON olarak tutulur.
+/// Reads VS Code's list of recently opened folders and files.
+/// The list is stored as JSON in %AppData%\Code\User\globalStorage\state.vscdb (SQLite)
+/// under the "history.recentlyOpenedPathsList" key.
 /// </summary>
 public sealed class VsCodeModule : IIslandModule
 {
@@ -42,7 +42,7 @@ public sealed class VsCodeModule : IIslandModule
     public async Task RefreshAsync()
     {
         try { Recents = await Task.Run(Discover); }
-        catch { /* Okunamadı */ }
+        catch { /* Could not read */ }
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
@@ -91,7 +91,7 @@ public sealed class VsCodeModule : IIslandModule
                         else if (entry.TryGetProperty("workspace", out var ws) && ws.TryGetProperty("configPath", out var cfg)) uri = cfg.GetString();
                         else if (entry.TryGetProperty("fileUri", out var file)) { uri = file.GetString(); isFolder = false; }
 
-                        // Sadece yerel yollar (uzak/WSL bağlantıları atlanır)
+                        // Local paths only (remote/WSL connections are skipped)
                         if (uri == null || !Uri.TryCreate(uri, UriKind.Absolute, out var parsed) || !parsed.IsFile) continue;
 
                         var path = parsed.LocalPath;

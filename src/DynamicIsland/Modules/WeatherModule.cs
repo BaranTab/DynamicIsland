@@ -7,7 +7,7 @@ namespace DynamicIsland.Modules;
 public sealed record HourlyForecast(string Hour, string Icon, double Temperature);
 
 /// <summary>
-/// Open-Meteo API'si ile güncel hava durumu ve saatlik tahmini çeker (ücretsiz, API key gerekmez).
+/// Current weather and an hourly forecast from the Open-Meteo API (free, no API key needed).
 /// </summary>
 public sealed class WeatherModule : IIslandModule
 {
@@ -16,15 +16,14 @@ public sealed class WeatherModule : IIslandModule
     private readonly double _latitude;
     private readonly double _longitude;
 
-    /// <param name="latitude">Varsayılan: Karabük</param>
-    public WeatherModule(double latitude = 41.20, double longitude = 32.62, string locationName = "Karabük")
+    public WeatherModule(double latitude, double longitude, string locationName)
     {
         _latitude = latitude;
         _longitude = longitude;
         LocationName = locationName;
     }
 
-    public string Name => "Hava Durumu";
+    public string Name => "Weather";
     public int Priority => 5;
     public bool IsActive => Temperature.HasValue;
 
@@ -34,7 +33,10 @@ public sealed class WeatherModule : IIslandModule
     public double? MinTemperature { get; private set; }
     public int WeatherCode { get; private set; }
     public string Icon => ToIcon(WeatherCode);
-    public string Description => ToDescription(WeatherCode);
+
+    /// <summary>Translation key for the current conditions (e.g. "WeatherRain").</summary>
+    public string DescriptionKey => ToDescriptionKey(WeatherCode);
+
     public IReadOnlyList<HourlyForecast> Hourly { get; private set; } = Array.Empty<HourlyForecast>();
 
     public event EventHandler? Changed;
@@ -71,7 +73,7 @@ public sealed class WeatherModule : IIslandModule
             MaxTemperature = daily.GetProperty("temperature_2m_max")[0].GetDouble();
             MinTemperature = daily.GetProperty("temperature_2m_min")[0].GetDouble();
 
-            // Şu andan sonraki 5 saat
+            // The next 5 hours
             var hourly = root.GetProperty("hourly");
             var times = hourly.GetProperty("time");
             var temps = hourly.GetProperty("temperature_2m");
@@ -88,13 +90,13 @@ public sealed class WeatherModule : IIslandModule
         }
         catch
         {
-            // İnternet yoksa son bilinen değer kalır.
+            // Offline: keep the last known values
         }
 
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    // WMO hava durumu kodları: https://open-meteo.com/en/docs
+    // WMO weather codes: https://open-meteo.com/en/docs
     public static string ToIcon(int code) => code switch
     {
         0 => "☀",
@@ -107,16 +109,16 @@ public sealed class WeatherModule : IIslandModule
         _ => "☁"
     };
 
-    public static string ToDescription(int code) => code switch
+    public static string ToDescriptionKey(int code) => code switch
     {
-        0 => "Açık",
-        1 or 2 or 3 => "Parçalı bulutlu",
-        45 or 48 => "Sisli",
-        >= 51 and <= 57 => "Çisenti",
-        (>= 61 and <= 67) or (>= 80 and <= 82) => "Yağmurlu",
-        (>= 71 and <= 77) or 85 or 86 => "Karlı",
-        >= 95 => "Fırtına",
-        _ => "Bulutlu"
+        0 => "WeatherClear",
+        1 or 2 or 3 => "WeatherPartlyCloudy",
+        45 or 48 => "WeatherFog",
+        >= 51 and <= 57 => "WeatherDrizzle",
+        (>= 61 and <= 67) or (>= 80 and <= 82) => "WeatherRain",
+        (>= 71 and <= 77) or 85 or 86 => "WeatherSnow",
+        >= 95 => "WeatherStorm",
+        _ => "WeatherCloudy"
     };
 
     public void Dispose() => _timer.Dispose();

@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:DynamicIsland.Controls"
         xmlns:pages="clr-namespace:DynamicIsland.Views.Pages"
+        xmlns:loc="clr-namespace:DynamicIsland.Localization"
         Title="Dynamic Island"
         Width="820" Height="360"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
@@ -10,32 +11,32 @@
         FontFamily="Segoe UI Variable Display, Segoe UI" Foreground="White"
         TextOptions.TextFormattingMode="Ideal">
 
-    <!-- Pencerenin şeffaf kısımları tıklamayı alttaki uygulamalara geçirir;
-         sadece cam ada şekli fareyi yakalar. Stiller: Themes/Styles.xaml -->
+    <!-- Transparent parts of the window pass clicks through to the apps below;
+         only the glass island shape captures the mouse. Styles: Themes/Styles.xaml -->
 
     <Grid x:Name="IslandRoot" MouseEnter="Island_MouseEnter" MouseLeave="Island_MouseLeave">
 
-        <!-- CAM ŞEKİL -->
+        <!-- GLASS SHAPE -->
         <controls:IslandShape x:Name="Glass"
                               BodyWidth="150" BodyHeight="32" BottomRadius="14" FilletRadius="10"
                               GlowStrength="0" />
 
-        <!-- İçerik, camın gövdesiyle birlikte büyür -->
+        <!-- Content grows together with the glass body -->
         <Grid x:Name="Body" HorizontalAlignment="Center" VerticalAlignment="Top" ClipToBounds="True"
               Width="{Binding BodyWidth, ElementName=Glass}"
               Height="{Binding BodyHeight, ElementName=Glass}">
 
-            <!-- ======================= KAPALI ADA ======================= -->
+            <!-- ===================== COMPACT ISLAND ===================== -->
             <Grid x:Name="CompactView" Height="32" Margin="14,0" VerticalAlignment="Top">
 
-                <!-- Boşta: iki küçük nokta -->
+                <!-- Idle: two small dots -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"
                             Visibility="{Binding IdleVisibility}">
                     <Ellipse Width="6" Height="6" Fill="White" Opacity="0.85" Margin="3,0" />
                     <Ellipse Width="6" Height="6" Fill="White" Opacity="0.85" Margin="3,0" />
                 </StackPanel>
 
-                <!-- Müzik: küçük kapak + ekolayzer -->
+                <!-- Music: tiny album art + equalizer -->
                 <Grid Visibility="{Binding MusicCompactVisibility}">
                     <Grid Width="20" Height="20" HorizontalAlignment="Left" VerticalAlignment="Center">
                         <Border CornerRadius="6" Background="#333" />
@@ -66,7 +67,7 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- Odak çalışıyor: kalan süre -->
+                <!-- Focus timer running: remaining time -->
                 <Grid Visibility="{Binding TimerCompactVisibility}">
                     <TextBlock Text="&#xE916;" FontFamily="{StaticResource Icons}" FontSize="13"
                                Foreground="{DynamicResource AccentBrush}"
@@ -77,7 +78,7 @@
                 </Grid>
             </Grid>
 
-            <!-- ======================= AÇIK PANEL ======================= -->
+            <!-- ===================== EXPANDED PANEL ===================== -->
             <Grid x:Name="ExpandedView" Width="636" Margin="0,14,0,0"
                   HorizontalAlignment="Center" VerticalAlignment="Top"
                   Opacity="0" Visibility="Collapsed">
@@ -87,7 +88,7 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <!-- Üst bilgi satırı -->
+                <!-- Header -->
                 <Grid>
                     <TextBlock Text="{Binding HeaderLeft}" FontFamily="{StaticResource Mono}" FontSize="11"
                                Opacity="0.75" VerticalAlignment="Center" />
@@ -112,18 +113,19 @@
                                 Width="26" Height="22" FontSize="12" Margin="8,0,0,0" Click="More_Click">
                             <Button.ContextMenu>
                                 <ContextMenu Closed="Menu_Closed">
-                                    <MenuItem Header="Ayarlar dosyasını aç" Click="Settings_Click" />
+                                    <MenuItem x:Name="LanguageMenu" Header="{loc:T MenuLanguage}" />
+                                    <MenuItem Header="{loc:T MenuSettings}" Click="Settings_Click" />
                                     <Separator />
-                                    <MenuItem Header="Çıkış" Click="Exit_Click" />
+                                    <MenuItem Header="{loc:T MenuExit}" Click="Exit_Click" />
                                 </ContextMenu>
                             </Button.ContextMenu>
                         </Button>
                     </StackPanel>
                 </Grid>
 
-                <!-- Sayfalar.
-                     Not: Sayfa şeridi bir Canvas içinde, çünkü Canvas çocuklarını kırpmaz.
-                     (Doğrudan Border içine konunca şerit 636 px'te kırpılıyor ve diğer sayfalar boş görünüyordu.) -->
+                <!-- Pages.
+                     The page strip lives inside a Canvas because a Canvas never clips its children.
+                     (Placed directly in the Border, the strip was clipped at 636 px and the other pages looked empty.) -->
                 <Border x:Name="PagesViewport" Grid.Row="1" Width="636" Height="190" Margin="0,10,0,0"
                         ClipToBounds="True" Background="Transparent"
                         PreviewMouseLeftButtonDown="Viewport_PreviewMouseLeftButtonDown"
@@ -149,69 +151,69 @@
                     </Canvas>
                 </Border>
 
-                <!-- Alt sekme çubuğu -->
+                <!-- Bottom tab bar -->
                 <StackPanel x:Name="Tabs" Grid.Row="2" Orientation="Horizontal"
                             HorizontalAlignment="Center" Margin="0,10,0,12">
-                    <Border Style="{StaticResource TabItem}" Tag="0" MouseLeftButtonUp="Navigate_Click" ToolTip="Ana Sayfa">
+                    <Border Style="{StaticResource TabItem}" Tag="0" MouseLeftButtonUp="Navigate_Click">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="&#xE80F;" Style="{StaticResource IconGlyph}" />
-                            <TextBlock Text="ANA SAYFA" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
+                            <TextBlock Text="{loc:T TabHome}" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
                                        VerticalAlignment="Center" MaxWidth="0" Opacity="0" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource TabItem}" Tag="1" MouseLeftButtonUp="Navigate_Click" ToolTip="Müzik">
+                    <Border Style="{StaticResource TabItem}" Tag="1" MouseLeftButtonUp="Navigate_Click">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="&#xE8D6;" Style="{StaticResource IconGlyph}" />
-                            <TextBlock Text="MÜZİK" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
+                            <TextBlock Text="{loc:T TabMusic}" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
                                        VerticalAlignment="Center" MaxWidth="0" Opacity="0" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource TabItem}" Tag="2" MouseLeftButtonUp="Navigate_Click" ToolTip="Odak">
+                    <Border Style="{StaticResource TabItem}" Tag="2" MouseLeftButtonUp="Navigate_Click">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="&#xE916;" Style="{StaticResource IconGlyph}" />
-                            <TextBlock Text="ODAK" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
+                            <TextBlock Text="{loc:T TabFocus}" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
                                        VerticalAlignment="Center" MaxWidth="0" Opacity="0" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource TabItem}" Tag="3" MouseLeftButtonUp="Navigate_Click" ToolTip="Hava Durumu">
+                    <Border Style="{StaticResource TabItem}" Tag="3" MouseLeftButtonUp="Navigate_Click">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="&#xE706;" Style="{StaticResource IconGlyph}" />
-                            <TextBlock Text="HAVA" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
+                            <TextBlock Text="{loc:T TabWeather}" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
                                        VerticalAlignment="Center" MaxWidth="0" Opacity="0" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource TabItem}" Tag="4" MouseLeftButtonUp="Navigate_Click" ToolTip="Posta">
+                    <Border Style="{StaticResource TabItem}" Tag="4" MouseLeftButtonUp="Navigate_Click">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="&#xE715;" Style="{StaticResource IconGlyph}" />
-                            <TextBlock Text="POSTA" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
+                            <TextBlock Text="{loc:T TabMail}" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
                                        VerticalAlignment="Center" MaxWidth="0" Opacity="0" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource TabItem}" Tag="5" MouseLeftButtonUp="Navigate_Click" ToolTip="Claude Code">
+                    <Border Style="{StaticResource TabItem}" Tag="5" MouseLeftButtonUp="Navigate_Click">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="&#xE756;" Style="{StaticResource IconGlyph}" />
-                            <TextBlock Text="CLAUDE" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
+                            <TextBlock Text="{loc:T TabClaude}" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
                                        VerticalAlignment="Center" MaxWidth="0" Opacity="0" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource TabItem}" Tag="6" MouseLeftButtonUp="Navigate_Click" ToolTip="VS Code">
+                    <Border Style="{StaticResource TabItem}" Tag="6" MouseLeftButtonUp="Navigate_Click">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="&#xE943;" Style="{StaticResource IconGlyph}" />
-                            <TextBlock Text="VS CODE" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
+                            <TextBlock Text="{loc:T TabVsCode}" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
                                        VerticalAlignment="Center" MaxWidth="0" Opacity="0" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource TabItem}" Tag="7" MouseLeftButtonUp="Navigate_Click" ToolTip="Notlar">
+                    <Border Style="{StaticResource TabItem}" Tag="7" MouseLeftButtonUp="Navigate_Click">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="&#xE70B;" Style="{StaticResource IconGlyph}" />
-                            <TextBlock Text="NOTLAR" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
+                            <TextBlock Text="{loc:T TabNotes}" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
                                        VerticalAlignment="Center" MaxWidth="0" Opacity="0" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource TabItem}" Tag="8" MouseLeftButtonUp="Navigate_Click" ToolTip="Takvim">
+                    <Border Style="{StaticResource TabItem}" Tag="8" MouseLeftButtonUp="Navigate_Click">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="&#xE787;" Style="{StaticResource IconGlyph}" />
-                            <TextBlock Text="TAKVİM" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
+                            <TextBlock Text="{loc:T TabCalendar}" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
                                        VerticalAlignment="Center" MaxWidth="0" Opacity="0" />
                         </StackPanel>
                     </Border>

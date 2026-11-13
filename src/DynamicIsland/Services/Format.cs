@@ -1,24 +1,22 @@
-using System.Globalization;
 using System.IO;
+using DynamicIsland.Localization;
 
 namespace DynamicIsland.Services;
 
 public static class Format
 {
-    public static readonly CultureInfo Tr = new("tr-TR");
-
-    /// <summary>"az önce", "5 dk önce", "3 saat önce", "2 gün önce", "4 Kas"</summary>
+    /// <summary>"just now", "5 min ago", "3 h ago", "2 d ago", "4 Nov" (in the current UI language)</summary>
     public static string Relative(DateTime time)
     {
         var diff = DateTime.Now - time;
-        if (diff.TotalMinutes < 1) return "az önce";
-        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} dk önce";
-        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours} saat önce";
-        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays} gün önce";
-        return time.ToString("d MMM", Tr);
+        if (diff.TotalMinutes < 1) return Loc.T("TimeJustNow");
+        if (diff.TotalMinutes < 60) return Loc.T("TimeMinutesAgo", (int)diff.TotalMinutes);
+        if (diff.TotalHours < 24) return Loc.T("TimeHoursAgo", (int)diff.TotalHours);
+        if (diff.TotalDays < 7) return Loc.T("TimeDaysAgo", (int)diff.TotalDays);
+        return time.ToString("d MMM", Loc.Instance.Culture);
     }
 
-    /// <summary>C:\Users\baran\projeler\x → ~\projeler\x</summary>
+    /// <summary>C:\Users\baran\projects\x → ~\projects\x</summary>
     public static string ShortPath(string path)
     {
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);

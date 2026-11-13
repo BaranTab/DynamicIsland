@@ -7,9 +7,9 @@ namespace DynamicIsland.Modules;
 public sealed record ProjectItem(string Name, string Path, string Detail);
 
 /// <summary>
-/// Claude Code ile en son çalışılan projeleri bulur.
-/// Claude Code oturumları ~/.claude/projects/&lt;proje&gt;/*.jsonl dosyalarında tutulur;
-/// bu dosyalardaki "cwd" alanı projenin gerçek klasörünü verir.
+/// Finds the projects you most recently worked on with Claude Code.
+/// Claude Code stores sessions in ~/.claude/projects/&lt;project&gt;/*.jsonl;
+/// the "cwd" field in those files gives the project's real folder.
 /// </summary>
 public sealed class ClaudeCodeModule : IIslandModule
 {
@@ -36,7 +36,7 @@ public sealed class ClaudeCodeModule : IIslandModule
     public async Task RefreshAsync()
     {
         try { Projects = await Task.Run(Discover); }
-        catch { /* Okunamadı */ }
+        catch { /* Could not read */ }
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
@@ -95,10 +95,10 @@ public sealed class ClaudeCodeModule : IIslandModule
                     if (doc.RootElement.TryGetProperty("cwd", out var cwd) && cwd.ValueKind == JsonValueKind.String)
                         return cwd.GetString();
                 }
-                catch (JsonException) { /* Bu satırı atla */ }
+                catch (JsonException) { /* Skip this line */ }
             }
         }
-        catch { /* Dosya kilitli olabilir */ }
+        catch { /* The file may be locked */ }
 
         return null;
     }

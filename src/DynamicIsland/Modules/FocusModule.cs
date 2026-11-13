@@ -1,14 +1,14 @@
 namespace DynamicIsland.Modules;
 
 /// <summary>
-/// Pomodoro tarzı odak zamanlayıcısı.
+/// A Pomodoro-style focus timer.
 /// </summary>
 public sealed class FocusModule : IIslandModule
 {
     private readonly System.Timers.Timer _timer = new(250);
 
     public string Name => "Odak";
-    public int Priority => 20; // Çalışırken her şeyin önünde
+    public int Priority => 20; // While running, it takes over the compact island
     public bool IsActive => IsRunning;
 
     public TimeSpan Duration { get; private set; } = TimeSpan.FromMinutes(25);

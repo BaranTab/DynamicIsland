@@ -1,11 +1,16 @@
 using System.IO;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace DynamicIsland.Services;
 
 public sealed class AppSettings
 {
+    /// <summary>UI language: en, tr, de, fr, es, it, pt. Can also be changed from the ⋯ menu.</summary>
+    public string Language { get; set; } = "en";
+
     public WeatherSettings Weather { get; set; } = new();
     public MailSettings Mail { get; set; } = new();
     public CalendarSettings Calendar { get; set; } = new();
@@ -22,11 +27,11 @@ public sealed class WeatherSettings
 
 public sealed class MailSettings
 {
-    /// <summary>Gmail için imap.gmail.com, Outlook için outlook.office365.com</summary>
+    /// <summary>The provider's IMAP server, e.g. imap.gmail.com (not your email address).</summary>
     public string ImapHost { get; set; } = "imap.gmail.com";
     public int ImapPort { get; set; } = 993;
     public string Username { get; set; } = "";
-    /// <summary>Gmail'de normal şifre değil, "Uygulama şifresi" gerekir.</summary>
+    /// <summary>An app password generated for this app, never your normal account password.</summary>
     public string AppPassword { get; set; } = "";
     public string WebUrl { get; set; } = "https://mail.google.com";
 
@@ -36,27 +41,27 @@ public sealed class MailSettings
 
 public sealed class CalendarSettings
 {
-    /// <summary>Google Takvim → Ayarlar → Takvimi entegre et → "iCal biçimindeki gizli adres"</summary>
+    /// <summary>Google Calendar → Settings → Integrate calendar → "Secret address in iCal format".</summary>
     public string IcsUrl { get; set; } = "";
     public string WebUrl { get; set; } = "https://calendar.google.com";
 }
 
 public sealed class ClaudeCodeSettings
 {
-    /// <summary>Otomatik bulunanlara ek olarak gösterilecek proje klasörleri.</summary>
+    /// <summary>Extra project folders shown in addition to the ones detected automatically.</summary>
     public List<string> Projects { get; set; } = new();
 }
 
 public sealed class VsCodeSettings
 {
-    /// <summary>Boş bırakılırsa Code.exe otomatik aranır.</summary>
+    /// <summary>Path to Code.exe. Leave null to detect it automatically.</summary>
     public string? CodePath { get; set; }
     public List<string> ExtraFolders { get; set; } = new();
 }
 
 /// <summary>
-/// Ayarlar %AppData%\DynamicIsland\settings.json dosyasında tutulur.
-/// Dosya yoksa varsayılan değerlerle oluşturulur.
+/// Settings are stored in %AppData%\DynamicIsland\settings.json.
+/// The file is created with default values on first run.
 /// </summary>
 public static class SettingsService
 {
@@ -69,7 +74,9 @@ public static class SettingsService
     {
         WriteIndented = true,
         ReadCommentHandling = JsonCommentHandling.Skip,
-        AllowTrailingCommas = true
+        AllowTrailingCommas = true,
+        // Keep non-ASCII characters (ü, é, ç…) readable in the file
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
     public static AppSettings Load()
@@ -89,7 +96,36 @@ public static class SettingsService
         }
         catch
         {
+            // A broken file must not crash the app; fall back to defaults (the file is left untouched)
             return new AppSettings();
+        }
+    }
+
+    /// <summary>
+    /// Updates only the "Language" value and leaves everything else in the file as it is.
+    /// If the file can't be parsed, nothing is written, so the user's settings are never lost.
+    /// </summary>
+    public static void SaveLanguage(string code)
+    {
+        try
+        {
+            Directory.CreateDirectory(Folder);
+            var json = File.Exists(FilePath) ? File.ReadAllText(FilePath) : "{}";
+
+            var documentOptions = new JsonDocumentOptions
+            {
+                CommentHandling = JsonCommentHandling.Skip,
+                AllowTrailingCommas = true
+            };
+
+            if (JsonNode.Parse(json, documentOptions: documentOptions) is not JsonObject root) return;
+
+            root["Language"] = code;
+            File.WriteAllText(FilePath, root.ToJsonString(Options));
+        }
+        catch
+        {
+            // Not critical: the language still changes for this session
         }
     }
 }

@@ -4,7 +4,7 @@
     <FontFamily x:Key="Mono">Cascadia Mono, Consolas</FontFamily>
     <FontFamily x:Key="Icons">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
-    <!-- Küçük etiketler: "MÜZİK", "ODAK" ... -->
+    <!-- Small labels: "MUSIC", "FOCUS"… -->
     <Style x:Key="Label" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource Mono}" />
         <Setter Property="FontSize" Value="10" />
@@ -18,7 +18,7 @@
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
-    <!-- Şeffaf yuvarlak ikon butonu -->
+    <!-- Transparent round icon button -->
     <Style x:Key="IconButton" TargetType="Button">
         <Setter Property="Foreground" Value="White" />
         <Setter Property="Background" Value="Transparent" />
@@ -52,7 +52,7 @@
         <Setter Property="FontSize" Value="12" />
     </Style>
 
-    <!-- Beyaz yuvarlak oynat/durdur butonu -->
+    <!-- White round play/pause button -->
     <Style x:Key="PlayButton" TargetType="Button">
         <Setter Property="Foreground" Value="Black" />
         <Setter Property="Background" Value="White" />
@@ -80,7 +80,7 @@
         </Setter>
     </Style>
 
-    <!-- Hap şeklinde yazılı buton -->
+    <!-- Text button with rounded corners -->
     <Style x:Key="PillButton" TargetType="Button">
         <Setter Property="Foreground" Value="Black" />
         <Setter Property="Background" Value="White" />
@@ -117,7 +117,7 @@
         <Setter Property="Height" Value="36" />
     </Style>
 
-    <!-- Küçük hap butonlar (sayfa içi eylemler) -->
+    <!-- Small text buttons (in-page actions) -->
     <Style x:Key="SmallPillButton" TargetType="Button" BasedOn="{StaticResource PillButton}">
         <Setter Property="Height" Value="30" />
         <Setter Property="MinWidth" Value="0" />
@@ -131,7 +131,7 @@
         <Setter Property="FontWeight" Value="Normal" />
     </Style>
 
-    <!-- Üstteki sayfa noktaları -->
+    <!-- Page dots in the header -->
     <Style x:Key="PageDot" TargetType="Border">
         <Setter Property="Width" Value="5" />
         <Setter Property="Height" Value="5" />
@@ -142,7 +142,7 @@
         <Setter Property="Cursor" Value="Hand" />
     </Style>
 
-    <!-- Alttaki sekmeler -->
+    <!-- Tabs in the bottom bar -->
     <Style x:Key="TabItem" TargetType="Border">
         <Setter Property="Height" Value="32" />
         <Setter Property="Padding" Value="11,0" />
@@ -152,14 +152,14 @@
         <Setter Property="Cursor" Value="Hand" />
     </Style>
 
-    <!-- Ana sayfa kartları -->
+    <!-- Base card -->
     <Style x:Key="Card" TargetType="Border">
         <Setter Property="CornerRadius" Value="20" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="ClipToBounds" Value="True" />
     </Style>
 
-    <!-- Ana sayfa kartları için tek tip cam görünüm -->
+    <!-- Uniform glass look for the home page cards -->
     <Style x:Key="HomeCard" TargetType="Border" BasedOn="{StaticResource Card}">
         <Setter Property="Background" Value="#16FFFFFF" />
         <Setter Property="BorderBrush" Value="#1FFFFFFF" />
@@ -171,7 +171,7 @@
         </Style.Triggers>
     </Style>
 
-    <!-- Tıklanabilir liste satırı (projeler, e-postalar, notlar...) -->
+    <!-- Clickable list row (projects, emails, notes…) -->
     <Style x:Key="RowItem" TargetType="Border">
         <Setter Property="CornerRadius" Value="12" />
         <Setter Property="Padding" Value="10,6" />
@@ -185,7 +185,7 @@
         </Style.Triggers>
     </Style>
 
-    <!-- Yarı saydam panel -->
+    <!-- Translucent panel -->
     <Style x:Key="Panel" TargetType="Border">
         <Setter Property="CornerRadius" Value="18" />
         <Setter Property="Background" Value="#14FFFFFF" />

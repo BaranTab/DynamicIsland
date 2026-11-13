@@ -1,0 +1,26 @@
+{
+  "Language": "en",
+  "Weather": {
+    "Latitude": 41.2,
+    "Longitude": 32.62,
+    "LocationName": "Karabük"
+  },
+  "Mail": {
+    "ImapHost": "imap.gmail.com",
+    "ImapPort": 993,
+    "Username": "you@gmail.com",
+    "AppPassword": "your-app-password",
+    "WebUrl": "https://mail.google.com"
+  },
+  "Calendar": {
+    "IcsUrl": "https://calendar.google.com/calendar/ical/.../basic.ics",
+    "WebUrl": "https://calendar.google.com"
+  },
+  "ClaudeCode": {
+    "Projects": []
+  },
+  "VsCode": {
+    "CodePath": null,
+    "ExtraFolders": []
+  }
+}

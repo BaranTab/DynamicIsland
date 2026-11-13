@@ -1,6 +1,7 @@
 <UserControl x:Class="DynamicIsland.Views.Pages.MailPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:DynamicIsland.Localization"
              Width="636" Height="190" Foreground="White">
     <Grid>
         <Grid.ColumnDefinitions>
@@ -9,7 +10,7 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <!-- Sol: okunmamış sayısı -->
+        <!-- Left: unread count -->
         <Border CornerRadius="20" Padding="16,14">
             <Border.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
@@ -26,7 +27,7 @@
 
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Right" Text="&#xE715;" Style="{StaticResource IconGlyph}" Opacity="0.85" />
-                    <TextBlock Text="GELEN KUTUSU" Style="{StaticResource Label}" />
+                    <TextBlock Text="{loc:T MailInbox}" Style="{StaticResource Label}" TextTrimming="CharacterEllipsis" />
                 </DockPanel>
 
                 <StackPanel Grid.Row="1" VerticalAlignment="Center">
@@ -36,12 +37,12 @@
                                TextTrimming="CharacterEllipsis" />
                 </StackPanel>
 
-                <Button Grid.Row="2" Style="{StaticResource SmallPillButton}" HorizontalAlignment="Left"
-                        Content="Gelen kutusunu aç" Click="OpenInbox_Click" />
+                <Button Grid.Row="2" Style="{StaticResource SmallPillButton}" HorizontalAlignment="Stretch"
+                        Content="{loc:T MailOpenInbox}" Click="OpenInbox_Click" />
             </Grid>
         </Border>
 
-        <!-- Sağ: son e-postalar -->
+        <!-- Right: recent emails -->
         <Grid Grid.Column="2" Visibility="{Binding MailReadyVisibility}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -50,10 +51,10 @@
 
             <DockPanel>
                 <Button DockPanel.Dock="Right" Style="{StaticResource SmallIconButton}" Content="&#xE72C;"
-                        ToolTip="Yenile" Click="Refresh_Click" Margin="0,-6,0,0" />
+                        ToolTip="{loc:T Refresh}" Click="Refresh_Click" Margin="0,-6,0,0" />
                 <TextBlock DockPanel.Dock="Right" Text="{Binding MailStatus}" FontSize="10" Opacity="0.5"
                            VerticalAlignment="Center" Margin="0,0,6,0" TextTrimming="CharacterEllipsis" MaxWidth="250" />
-                <TextBlock Text="SON E-POSTALAR" Style="{StaticResource Label}" VerticalAlignment="Center" />
+                <TextBlock Text="{loc:T MailRecent}" Style="{StaticResource Label}" VerticalAlignment="Center" />
             </DockPanel>
 
             <ItemsControl Grid.Row="1" Margin="0,8,0,0" ItemsSource="{Binding MailMessages}">
@@ -67,6 +68,7 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
+                                <!-- Sender initial -->
                                 <Border Width="30" Height="30" CornerRadius="15" Background="#33FFFFFF"
                                         VerticalAlignment="Center">
                                     <TextBlock Text="{Binding Initial}" FontWeight="SemiBold" FontSize="13"
@@ -80,6 +82,7 @@
                                                TextTrimming="CharacterEllipsis" />
                                 </StackPanel>
 
+                                <!-- Time + unread dot -->
                                 <StackPanel Grid.Column="2" HorizontalAlignment="Right">
                                     <TextBlock Text="{Binding TimeText}" FontFamily="{StaticResource Mono}"
                                                FontSize="10" Opacity="0.55" HorizontalAlignment="Right" />
@@ -92,18 +95,18 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <TextBlock Grid.Row="1" Text="Gelen kutusu boş ya da henüz yüklenmedi." FontSize="13" Opacity="0.5"
+            <TextBlock Grid.Row="1" Text="{loc:T MailEmpty}" FontSize="13" Opacity="0.5"
                        HorizontalAlignment="Center" VerticalAlignment="Center"
                        Visibility="{Binding MailEmptyVisibility}" />
         </Grid>
 
-        <!-- Sağ: kurulum -->
+        <!-- Right: setup instructions (when no account is configured) -->
         <StackPanel Grid.Column="2" VerticalAlignment="Center" Visibility="{Binding MailSetupVisibility}">
-            <TextBlock Text="Posta hesabını bağla" FontSize="20" FontWeight="SemiBold" />
-            <TextBlock FontSize="12" Opacity="0.65" TextWrapping="Wrap" Margin="0,6,0,12" LineHeight="18"
-                       Text="Gmail için: Google Hesabı → Güvenlik → 2 Adımlı Doğrulama'yı aç → Uygulama şifreleri'nden bir şifre oluştur. Sonra ayarlar dosyasında Mail bölümüne e-posta adresini ve bu şifreyi yaz, uygulamayı yeniden başlat." />
+            <TextBlock Text="{loc:T MailSetupTitle}" FontSize="20" FontWeight="SemiBold" />
+            <TextBlock Text="{loc:T MailSetupText}" FontSize="12" Opacity="0.65" TextWrapping="Wrap"
+                       Margin="0,6,0,12" LineHeight="17" />
             <Button Style="{StaticResource SmallPillButton}" HorizontalAlignment="Left"
-                    Content="Ayarları aç" Click="OpenSettings_Click" />
+                    Content="{loc:T OpenSettings}" Click="OpenSettings_Click" />
         </StackPanel>
     </Grid>
 </UserControl>

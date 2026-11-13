@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using DynamicIsland.Localization;
 
 namespace DynamicIsland.Services;
 
@@ -9,17 +10,18 @@ public sealed class Note
     public string Text { get; set; } = "";
     public DateTime Updated { get; set; } = DateTime.Now;
 
+    /// <summary>The first non-empty line, used as the title in the list.</summary>
     public string Title
     {
         get
         {
             var first = Text.Split('\n').Select(l => l.Trim()).FirstOrDefault(l => l.Length > 0);
-            return first ?? "Boş not";
+            return first ?? Loc.T("NotesEmptyNote");
         }
     }
 }
 
-/// <summary>Notlar %AppData%\DynamicIsland\notes.json dosyasında tutulur.</summary>
+/// <summary>Notes are stored in %AppData%\DynamicIsland\notes.json.</summary>
 public static class NotesStore
 {
     private static string FilePath => Path.Combine(SettingsService.Folder, "notes.json");
@@ -32,7 +34,7 @@ public static class NotesStore
             if (File.Exists(FilePath))
                 return JsonSerializer.Deserialize<List<Note>>(File.ReadAllText(FilePath)) ?? new List<Note>();
         }
-        catch { /* Bozuk dosya: boş başla */ }
+        catch { /* Corrupt file: start empty */ }
         return new List<Note>();
     }
 
@@ -44,6 +46,6 @@ public static class NotesStore
             var toSave = notes.Where(n => !string.IsNullOrWhiteSpace(n.Text)).ToList();
             File.WriteAllText(FilePath, JsonSerializer.Serialize(toSave, Options));
         }
-        catch { /* Kaydedilemedi */ }
+        catch { /* Could not save */ }
     }
 }

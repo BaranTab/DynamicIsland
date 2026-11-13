@@ -1,20 +1,20 @@
 namespace DynamicIsland.Modules;
 
 /// <summary>
-/// Adada gösterilebilen her özellik (saat, medya, hava durumu, pil...) bu arayüzü uygular.
-/// Aktif modüller arasında en yüksek önceliğe sahip olan, compact görünümde gösterilir.
+/// Every feature the island can show (clock, media, weather, mail…) implements this interface.
+/// Among the active modules, the one with the highest priority is shown in the compact island.
 /// </summary>
 public interface IIslandModule : IDisposable
 {
     string Name { get; }
 
-    /// <summary>Yüksek değer = compact görünümde öncelik.</summary>
+    /// <summary>Higher value = shown first in the compact island.</summary>
     int Priority { get; }
 
-    /// <summary>Modülün şu an gösterecek bir şeyi var mı?</summary>
+    /// <summary>Does the module have something to show right now?</summary>
     bool IsActive { get; }
 
-    /// <summary>Veri değiştiğinde tetiklenir (arka plan thread'inden gelebilir).</summary>
+    /// <summary>Raised when data changes (may come from a background thread).</summary>
     event EventHandler? Changed;
 
     Task StartAsync();

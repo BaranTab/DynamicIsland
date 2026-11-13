@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using DynamicIsland.Localization;
 using DynamicIsland.Services;
 using Microsoft.Win32;
 
@@ -24,7 +25,7 @@ public partial class ClaudePage : UserControl
 
     private void PickFolder_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFolderDialog { Title = "Claude Code'u hangi klasörde başlatayım?" };
+        var dialog = new OpenFolderDialog { Title = Loc.T("ClaudePickFolderTitle") };
         if (dialog.ShowDialog() == true)
             Launcher.OpenClaudeCode(dialog.FolderName);
     }

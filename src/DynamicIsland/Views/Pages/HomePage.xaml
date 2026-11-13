@@ -1,6 +1,7 @@
 <UserControl x:Class="DynamicIsland.Views.Pages.HomePage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:DynamicIsland.Localization"
              Width="636" Height="190" Foreground="White">
     <Grid>
         <Grid.ColumnDefinitions>
@@ -11,11 +12,11 @@
             <ColumnDefinition Width="160" />
         </Grid.ColumnDefinitions>
 
-        <!-- Hava kartı -->
+        <!-- Weather card -->
         <Border Grid.Column="0" Style="{StaticResource HomeCard}" Padding="16,14"
                 Tag="3" MouseLeftButtonUp="Card_Click">
             <Grid>
-                <TextBlock Text="HAVA" Style="{StaticResource Label}" />
+                <TextBlock Text="{loc:T TabWeather}" Style="{StaticResource Label}" />
                 <TextBlock Text="{Binding WeatherIcon}" FontSize="28"
                            HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,0,0" />
                 <StackPanel VerticalAlignment="Bottom">
@@ -26,7 +27,7 @@
             </Grid>
         </Border>
 
-        <!-- Müzik kartı (arka plan = albüm kapağı) -->
+        <!-- Music card (background = album art) -->
         <Border Grid.Column="2" Style="{StaticResource HomeCard}" Tag="1" MouseLeftButtonUp="Card_Click">
             <Grid>
                 <Border CornerRadius="20" Background="#16FFFFFF" />
@@ -44,7 +45,7 @@
                     </Border.Background>
                 </Border>
 
-                <TextBlock Text="MÜZİK" Style="{StaticResource Label}" Margin="16,14" />
+                <TextBlock Text="{loc:T TabMusic}" Style="{StaticResource Label}" Margin="16,14" />
 
                 <Grid Margin="16,0,14,14" VerticalAlignment="Bottom" Visibility="{Binding MediaVisibility}">
                     <Grid.ColumnDefinitions>
@@ -62,13 +63,13 @@
                             Margin="10,0,0,0" VerticalAlignment="Bottom" />
                 </Grid>
 
-                <TextBlock Text="Şu an bir şey çalmıyor" FontSize="13" Opacity="0.5"
+                <TextBlock Text="{loc:T NothingPlaying}" FontSize="13" Opacity="0.5"
                            HorizontalAlignment="Center" VerticalAlignment="Center"
                            Visibility="{Binding NoMediaVisibility}" />
             </Grid>
         </Border>
 
-        <!-- Sağ sütun: Odak + Posta -->
+        <!-- Right column: Focus + Mail -->
         <Grid Grid.Column="4">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
@@ -78,7 +79,7 @@
 
             <Border Style="{StaticResource HomeCard}" Padding="14,10" Tag="2" MouseLeftButtonUp="Card_Click">
                 <Grid>
-                    <TextBlock Text="ODAK" Style="{StaticResource Label}" />
+                    <TextBlock Text="{loc:T TabFocus}" Style="{StaticResource Label}" />
                     <TextBlock Text="&#xE916;" Style="{StaticResource IconGlyph}" FontSize="14"
                                HorizontalAlignment="Right" VerticalAlignment="Top" Opacity="0.85" />
                     <TextBlock Text="{Binding FocusStatusText}" FontSize="10" Opacity="0.6"
@@ -90,7 +91,7 @@
 
             <Border Grid.Row="2" Style="{StaticResource HomeCard}" Padding="14,10" Tag="4" MouseLeftButtonUp="Card_Click">
                 <Grid>
-                    <TextBlock Text="POSTA" Style="{StaticResource Label}" />
+                    <TextBlock Text="{loc:T TabMail}" Style="{StaticResource Label}" />
                     <TextBlock Text="&#xE715;" Style="{StaticResource IconGlyph}" FontSize="14"
                                HorizontalAlignment="Right" VerticalAlignment="Top" Opacity="0.85" />
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
