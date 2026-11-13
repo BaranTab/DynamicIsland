@@ -86,5 +86,14 @@
   "TimeJustNow": "agora mesmo",
   "TimeMinutesAgo": "há {0} min",
   "TimeHoursAgo": "há {0} h",
-  "TimeDaysAgo": "há {0} d"
+  "TimeDaysAgo": "há {0} d",
+  "TabTodo": "TAREFAS",
+  "TodoAddPlaceholder": "Adiciona uma tarefa e prime Enter",
+  "TodoAdd": "Adicionar",
+  "TodoProgress": "PROGRESSO",
+  "TodoCompleted": "concluídas",
+  "TodoClearDone": "Limpar concluídas",
+  "TodoEmpty": "Nada para fazer. Adiciona a tua primeira tarefa acima.",
+  "LyricsSearching": "A procurar a letra…",
+  "LyricsNotFound": "Letra sincronizada não encontrada"
 }

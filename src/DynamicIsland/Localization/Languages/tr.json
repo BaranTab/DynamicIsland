@@ -86,5 +86,14 @@
   "TimeJustNow": "az önce",
   "TimeMinutesAgo": "{0} dk önce",
   "TimeHoursAgo": "{0} saat önce",
-  "TimeDaysAgo": "{0} gün önce"
+  "TimeDaysAgo": "{0} gün önce",
+  "TabTodo": "YAPILACAKLAR",
+  "TodoAddPlaceholder": "Görev ekle ve Enter'a bas",
+  "TodoAdd": "Ekle",
+  "TodoProgress": "İLERLEME",
+  "TodoCompleted": "tamamlandı",
+  "TodoClearDone": "Tamamlananları temizle",
+  "TodoEmpty": "Yapılacak bir şey yok. İlk görevini yukarıdan ekle.",
+  "LyricsSearching": "Şarkı sözleri aranıyor…",
+  "LyricsNotFound": "Senkronize söz bulunamadı"
 }

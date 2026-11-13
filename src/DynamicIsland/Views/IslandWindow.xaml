@@ -36,8 +36,16 @@
                     <Ellipse Width="6" Height="6" Fill="White" Opacity="0.85" Margin="3,0" />
                 </StackPanel>
 
-                <!-- Music: tiny album art + equalizer -->
+                <!-- Music: tiny album art + (current lyric line) + equalizer -->
                 <Grid Visibility="{Binding MusicCompactVisibility}">
+                    <TextBlock x:Name="CompactLyric" Text="{Binding CompactLyricText}"
+                               Visibility="{Binding CompactLyricVisibility}"
+                               FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" Margin="30,0,34,0">
+                        <TextBlock.RenderTransform>
+                            <TranslateTransform x:Name="CompactLyricShift" />
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
                     <Grid Width="20" Height="20" HorizontalAlignment="Left" VerticalAlignment="Center">
                         <Border CornerRadius="6" Background="#333" />
                         <Border CornerRadius="6">
@@ -104,6 +112,7 @@
                         <Border Style="{StaticResource PageDot}" Tag="6" MouseLeftButtonUp="Navigate_Click" />
                         <Border Style="{StaticResource PageDot}" Tag="7" MouseLeftButtonUp="Navigate_Click" />
                         <Border Style="{StaticResource PageDot}" Tag="8" MouseLeftButtonUp="Navigate_Click" />
+                        <Border Style="{StaticResource PageDot}" Tag="9" MouseLeftButtonUp="Navigate_Click" />
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
@@ -146,7 +155,8 @@
                             <pages:ClaudePage />    <!-- 5 -->
                             <pages:VsCodePage />    <!-- 6 -->
                             <pages:NotesPage />     <!-- 7 -->
-                            <pages:CalendarPage />  <!-- 8 -->
+                            <pages:TodoPage />      <!-- 8 -->
+                            <pages:CalendarPage />  <!-- 9 -->
                         </StackPanel>
                     </Canvas>
                 </Border>
@@ -211,6 +221,13 @@
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource TabItem}" Tag="8" MouseLeftButtonUp="Navigate_Click">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="&#xE9D5;" Style="{StaticResource IconGlyph}" />
+                            <TextBlock Text="{loc:T TabTodo}" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" MaxWidth="0" Opacity="0" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource TabItem}" Tag="9" MouseLeftButtonUp="Navigate_Click">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="&#xE787;" Style="{StaticResource IconGlyph}" />
                             <TextBlock Text="{loc:T TabCalendar}" FontFamily="{StaticResource Mono}" FontSize="10" FontWeight="SemiBold"

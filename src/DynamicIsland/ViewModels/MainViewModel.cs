@@ -4,6 +4,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using DynamicIsland.Localization;
 using DynamicIsland.Modules;
 using DynamicIsland.Services;
@@ -27,6 +28,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private readonly List<IIslandModule> _modules;
     private byte[]? _lastThumbnail;
     private (DateTime Day, int Version, string Language) _calendarStamp;
+    private readonly DispatcherTimer _lyricsTimer = new() { Interval = TimeSpan.FromMilliseconds(200) };
+    private string _trackKey = "";
+    private int _lyricIndex = int.MinValue;
+
+    private static readonly string[] LyricProperties =
+    {
+        nameof(LyricPrevious), nameof(LyricCurrent), nameof(LyricNext), nameof(CompactLyricText)
+    };
 
     public AppSettings Settings { get; }
 
@@ -38,8 +47,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public CalendarModule Calendar { get; }
     public ClaudeCodeModule Claude { get; }
     public VsCodeModule VsCode { get; }
+    public LyricsModule Lyrics { get; }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    /// <summary>Raised when the current lyric line changes (used for the slide animation).</summary>
+    public event EventHandler? LyricLineChanged;
 
     private static CultureInfo Culture => Loc.Instance.Culture;
 
@@ -51,10 +64,15 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         Calendar = new CalendarModule(settings.Calendar);
         Claude = new ClaudeCodeModule(settings.ClaudeCode);
         VsCode = new VsCodeModule(settings.VsCode);
+        Lyrics = new LyricsModule(settings.Lyrics);
 
-        _modules = new List<IIslandModule> { Clock, Media, Weather, Focus, Mail, Calendar, Claude, VsCode };
+        _modules = new List<IIslandModule> { Clock, Media, Weather, Focus, Mail, Calendar, Claude, VsCode, Lyrics };
         foreach (var module in _modules)
             module.Changed += (_, _) => Application.Current?.Dispatcher.InvokeAsync(Refresh);
+
+        // Lyrics need a finer clock than the 1-second refresh; only the lyric texts are updated here
+        _lyricsTimer.Tick += (_, _) => UpdateLyricLine();
+        _lyricsTimer.Start();
 
         // Texts built ahead of time ("2 h ago" etc.) are rebuilt in the new language
         Loc.Instance.LanguageChanged += (_, _) =>
@@ -110,9 +128,54 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public double ProgressValue => Media.Duration.TotalSeconds > 0
         ? Math.Clamp(Media.CurrentPosition.TotalSeconds / Media.Duration.TotalSeconds, 0, 1)
         : 0;
-    public string ElapsedText => FormatTime(Media.CurrentPosition);
+    public string ElapsedText => FormatTime(_seekPreview is double preview
+        ? TimeSpan.FromSeconds(Media.Duration.TotalSeconds * preview)
+        : Media.CurrentPosition);
+    public bool CanSeek => Media.IsActive && Media.Duration.TotalSeconds > 0;
+
+    private double? _seekPreview;
+
+    /// <summary>While the progress bar is dragged, the elapsed time shows the drag position.</summary>
+    public void PreviewSeek(double fraction)
+    {
+        _seekPreview = double.IsNaN(fraction) ? null : fraction;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ElapsedText)));
+    }
+
+    /// <summary>Jumps to the given fraction (0–1) of the current song.</summary>
+    public async Task SeekAsync(double fraction)
+    {
+        _seekPreview = null;
+        await Media.SeekAsync(TimeSpan.FromSeconds(Media.Duration.TotalSeconds * Math.Clamp(fraction, 0, 1)));
+        Refresh();
+    }
     public string TotalText => FormatTime(Media.Duration);
     public Visibility ProgressVisibility => Show(Media.Duration.TotalSeconds > 0);
+
+    // ================================ Lyrics ===============================
+
+    public bool HasLyrics => Media.IsActive && Lyrics.State == LyricsState.Found;
+    public Visibility LyricsVisibility => Show(HasLyrics);
+    public Visibility NoLyricsVisibility => Show(!HasLyrics);
+
+    public string LyricPrevious => _lyricIndex >= 1 ? LineAt(_lyricIndex - 1) : "";
+    public string LyricCurrent => _lyricIndex >= 0 ? LineAt(_lyricIndex) : HasLyrics ? "♪" : "";
+    public string LyricNext => _lyricIndex >= -1 ? LineAt(_lyricIndex + 1) : "";
+
+    public string LyricsStatus => !Lyrics.Enabled || !Media.IsActive ? "" : Lyrics.State switch
+    {
+        LyricsState.Searching => Loc.T("LyricsSearching"),
+        LyricsState.NotFound => Loc.T("LyricsNotFound"),
+        _ => ""
+    };
+
+    /// <summary>The collapsed island shows the current line while music plays.</summary>
+    public bool ShowCompactLyric => Lyrics.ShowInCompactIsland && HasLyrics;
+    public Visibility CompactLyricVisibility => Show(ShowCompactLyric);
+    public string CompactLyricText => _lyricIndex >= 0 ? LineAt(_lyricIndex) : Media.Title;
+
+    private string LineAt(int index) =>
+        index >= 0 && index < Lyrics.Lines.Count ? Lyrics.Lines[index].Text : "";
 
     // ================================ Focus ================================
 
@@ -199,6 +262,15 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private void Refresh()
     {
+        // Look up lyrics when the track changes
+        var trackKey = $"{Media.Artist}|{Media.Title}";
+        if (trackKey != _trackKey)
+        {
+            _trackKey = trackKey;
+            _ = Lyrics.LoadAsync(Media.Title, Media.Artist, Media.Album, Media.Duration);
+        }
+        UpdateLyricLine();
+
         if (!ReferenceEquals(_lastThumbnail, Media.Thumbnail))
         {
             _lastThumbnail = Media.Thumbnail;
@@ -215,6 +287,21 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
         // An empty property name refreshes every binding
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
+    }
+
+    /// <summary>Finds the line being sung now and notifies the UI only when it changes.</summary>
+    private void UpdateLyricLine()
+    {
+        int index = HasLyrics
+            ? Lyrics.IndexAt(Media.CurrentPosition - Lyrics.Offset)
+            : int.MinValue;
+
+        if (index == _lyricIndex) return;
+        _lyricIndex = index;
+
+        foreach (var name in LyricProperties)
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        LyricLineChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>A six-week month view starting on Monday.</summary>
@@ -281,6 +368,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public void Dispose()
     {
+        _lyricsTimer.Stop();
         foreach (var module in _modules) module.Dispose();
     }
 }

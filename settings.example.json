@@ -5,6 +5,11 @@
     "Longitude": 32.62,
     "LocationName": "Karabük"
   },
+  "Lyrics": {
+    "Enabled": true,
+    "ShowInCompactIsland": true,
+    "OffsetMs": 0
+  },
   "Mail": {
     "ImapHost": "imap.gmail.com",
     "ImapPort": 993,

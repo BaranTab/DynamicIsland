@@ -22,7 +22,7 @@ public partial class IslandWindow : Window
 
     // ---- Pages ----
     public const int PageHome = 0, PageMusic = 1, PageFocus = 2, PageWeather = 3, PageMail = 4,
-                     PageClaude = 5, PageVsCode = 6, PageNotes = 7, PageCalendar = 8, PageCount = 9;
+                     PageClaude = 5, PageVsCode = 6, PageNotes = 7, PageTodo = 8, PageCalendar = 9, PageCount = 10;
     private const double PageWidth = 636;
 
     // ---- Colours ----
@@ -37,6 +37,7 @@ public partial class IslandWindow : Window
         [PageClaude] = Color.FromRgb(0xD9, 0x77, 0x57),
         [PageVsCode] = Color.FromRgb(0x2F, 0x80, 0xED),
         [PageNotes] = Color.FromRgb(0xE3, 0xB3, 0x41),
+        [PageTodo] = Color.FromRgb(0x36, 0xB3, 0xD9),
         [PageCalendar] = Color.FromRgb(0x3F, 0xB6, 0x8B)
     };
 
@@ -48,6 +49,7 @@ public partial class IslandWindow : Window
     private bool _expanded;
     private int _page;
     private IslandMode _mode = IslandMode.Idle;
+    private double _compactWidth = CompactWidthFor(IslandMode.Idle, false);
     private bool _equalizerPlaying;
     private Color _currentAccent = NeutralAccent;
     private double _currentGlow;
@@ -68,6 +70,7 @@ public partial class IslandWindow : Window
 
         _vm.PropertyChanged += (_, _) => OnStateChanged();
         _vm.Focus.Completed += (_, _) => Dispatcher.InvokeAsync(OnFocusCompleted);
+        _vm.LyricLineChanged += (_, _) => AnimateCompactLyric();
         _collapseTimer.Tick += CollapseTimer_Tick;
         Deactivated += (_, _) =>
         {
@@ -130,11 +133,15 @@ public partial class IslandWindow : Window
     private void OnStateChanged()
     {
         var mode = _vm.Mode;
-        if (mode != _mode)
+        _mode = mode;
+
+        // The collapsed island resizes to its content (wider when it shows a lyric line)
+        double width = CompactWidthFor(mode, _vm.ShowCompactLyric);
+        if (Math.Abs(width - _compactWidth) > 0.5)
         {
-            _mode = mode;
+            _compactWidth = width;
             if (!_expanded)
-                AnimateShape(CompactWidthFor(mode), CompactHeight, CompactRadius, CompactFillet, growing: true);
+                AnimateShape(width, CompactHeight, CompactRadius, CompactFillet, growing: true);
         }
 
         bool eq = mode == IslandMode.Music && _vm.Media.IsPlaying;
@@ -147,12 +154,25 @@ public partial class IslandWindow : Window
         UpdateAccent();
     }
 
-    private static double CompactWidthFor(IslandMode mode) => mode switch
+    private static double CompactWidthFor(IslandMode mode, bool showsLyric) => mode switch
     {
+        IslandMode.Music when showsLyric => 380,
         IslandMode.Music => 220,
         IslandMode.Timer => 200,
         _ => 150
     };
+
+    /// <summary>The new lyric line slides up and fades in on the collapsed island.</summary>
+    private void AnimateCompactLyric()
+    {
+        if (_expanded || !_vm.ShowCompactLyric) return;
+
+        var duration = TimeSpan.FromMilliseconds(300);
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        CompactLyricShift.BeginAnimation(TranslateTransform.YProperty,
+            new DoubleAnimation(8, 0, duration) { EasingFunction = ease });
+        CompactLyric.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, duration));
+    }
 
     private void SetEqualizer(bool playing)
     {
@@ -279,7 +299,7 @@ public partial class IslandWindow : Window
         _expanded = false;
         EndTextInput();
 
-        AnimateShape(CompactWidthFor(_mode), CompactHeight, CompactRadius, CompactFillet, growing: false);
+        AnimateShape(_compactWidth, CompactHeight, CompactRadius, CompactFillet, growing: false);
 
         Fade(ExpandedView, 0, 0, onCompleted: () =>
         {
@@ -396,8 +416,9 @@ public partial class IslandWindow : Window
 
     private void Viewport_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        // Dragging on the ruler or selecting text must not switch pages
-        if (IsWithin<TickRuler>(e.OriginalSource) || IsWithin<TextBoxBase>(e.OriginalSource)) return;
+        // Dragging the ruler or progress bar, or selecting text, must not switch pages
+        if (IsWithin<TickRuler>(e.OriginalSource) || IsWithin<SeekBar>(e.OriginalSource) ||
+            IsWithin<TextBoxBase>(e.OriginalSource)) return;
 
         _dragStart = e.GetPosition(PagesViewport);
         _dragging = false;

@@ -86,5 +86,14 @@
   "TimeJustNow": "just now",
   "TimeMinutesAgo": "{0} min ago",
   "TimeHoursAgo": "{0} h ago",
-  "TimeDaysAgo": "{0} d ago"
+  "TimeDaysAgo": "{0} d ago",
+  "TabTodo": "TO-DO",
+  "TodoAddPlaceholder": "Add a task and press Enter",
+  "TodoAdd": "Add",
+  "TodoProgress": "PROGRESS",
+  "TodoCompleted": "completed",
+  "TodoClearDone": "Clear completed",
+  "TodoEmpty": "Nothing to do. Add your first task above.",
+  "LyricsSearching": "Searching for lyrics…",
+  "LyricsNotFound": "No synced lyrics found"
 }

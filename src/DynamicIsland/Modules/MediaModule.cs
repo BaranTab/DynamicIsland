@@ -12,6 +12,7 @@ public sealed class MediaModule : IIslandModule
     private GlobalSystemMediaTransportControlsSessionManager? _manager;
     private GlobalSystemMediaTransportControlsSession? _session;
     private DateTimeOffset _timelineUpdatedAt;
+    private TimeSpan _startTime;
 
     public string Name => "Medya";
     public int Priority => 10;
@@ -19,8 +20,12 @@ public sealed class MediaModule : IIslandModule
 
     public string Title { get; private set; } = "";
     public string Artist { get; private set; } = "";
+    public string Album { get; private set; } = "";
     public string SourceApp { get; private set; } = "";
     public bool IsPlaying { get; private set; }
+
+    /// <summary>Whether the playing app lets us jump to another position (most music apps do).</summary>
+    public bool CanSeek { get; private set; }
     public byte[]? Thumbnail { get; private set; }
 
     public TimeSpan Duration { get; private set; }
@@ -87,24 +92,28 @@ public sealed class MediaModule : IIslandModule
         {
             if (_session == null)
             {
-                Title = Artist = SourceApp = "";
+                Title = Artist = Album = SourceApp = "";
                 IsPlaying = false;
                 Thumbnail = null;
-                Duration = _position = TimeSpan.Zero;
+                Duration = _position = _startTime = TimeSpan.Zero;
+                CanSeek = false;
             }
             else
             {
                 var props = await _session.TryGetMediaPropertiesAsync();
                 Title = props?.Title ?? "";
                 Artist = props?.Artist ?? "";
+                Album = props?.AlbumTitle ?? "";
                 SourceApp = CleanAppName(_session.SourceAppUserModelId);
-                IsPlaying = _session.GetPlaybackInfo()?.PlaybackStatus
-                            == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
+                var playback = _session.GetPlaybackInfo();
+                IsPlaying = playback?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
+                CanSeek = playback?.Controls?.IsPlaybackPositionEnabled == true;
 
                 var timeline = _session.GetTimelineProperties();
                 if (timeline != null)
                 {
                     Duration = timeline.EndTime - timeline.StartTime;
+                    _startTime = timeline.StartTime;
                     _position = timeline.Position;
                     _timelineUpdatedAt = timeline.LastUpdatedTime;
                 }
@@ -159,6 +168,31 @@ public sealed class MediaModule : IIslandModule
     public async Task NextAsync()
     {
         if (_session != null) await _session.TrySkipNextAsync();
+    }
+
+    /// <summary>Jumps to a position in the current track (relative to its start).</summary>
+    public async Task SeekAsync(TimeSpan position)
+    {
+        // CanSeek isn't checked on purpose: some apps under-report it but still accept the request
+        if (_session == null) return;
+
+        if (position < TimeSpan.Zero) position = TimeSpan.Zero;
+        if (Duration > TimeSpan.Zero && position > Duration) position = Duration;
+
+        try
+        {
+            if (await _session.TryChangePlaybackPositionAsync((_startTime + position).Ticks))
+            {
+                // Update locally right away; the app confirms with a timeline event a moment later
+                _position = _startTime + position;
+                _timelineUpdatedAt = DateTimeOffset.Now;
+                Changed?.Invoke(this, EventArgs.Empty);
+            }
+        }
+        catch
+        {
+            // The app refused or the session closed
+        }
     }
 
     public async Task PreviousAsync()

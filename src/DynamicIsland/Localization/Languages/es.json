@@ -86,5 +86,14 @@
   "TimeJustNow": "ahora mismo",
   "TimeMinutesAgo": "hace {0} min",
   "TimeHoursAgo": "hace {0} h",
-  "TimeDaysAgo": "hace {0} d"
+  "TimeDaysAgo": "hace {0} d",
+  "TabTodo": "TAREAS",
+  "TodoAddPlaceholder": "Añade una tarea y pulsa Intro",
+  "TodoAdd": "Añadir",
+  "TodoProgress": "PROGRESO",
+  "TodoCompleted": "completadas",
+  "TodoClearDone": "Borrar completadas",
+  "TodoEmpty": "Nada que hacer. Añade tu primera tarea arriba.",
+  "LyricsSearching": "Buscando la letra…",
+  "LyricsNotFound": "No se encontró letra sincronizada"
 }

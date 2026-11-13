@@ -25,19 +25,21 @@ When collapsed, it sits at the top centre of your screen as a small notch. Hover
 | | Page | What it does |
 |---|---|---|
 | 🏠 | **Home** | Summary cards for weather, music, focus and mail |
-| 🎵 | **Music** | Now playing, album art, progress bar, previous / play / next |
+| 🎵 | **Music** | Now playing, album art, **time-synced lyrics**, a draggable progress bar to jump anywhere in the song, previous / play / next |
 | ⏱ | **Focus** | Pomodoro timer; drag the ruler to pick 1–60 minutes |
 | 🌤 | **Weather** | Current conditions, high/low and a 5-hour forecast |
 | ✉️ | **Mail** | Unread count and latest emails (IMAP, read-only) |
 | 🤖 | **Claude Code** | Recent projects; start a `claude` session in one click |
 | 💻 | **VS Code** | Recently opened folders; open them in VS Code in one click |
 | 📝 | **Notes** | A quick notepad that saves automatically |
+| ✅ | **To-do** | A simple task list with progress |
 | 📅 | **Calendar** | Month view and upcoming events (Google / Outlook iCal) |
 
 **Also**
 - 🎨 **Glass that takes on colour:** while music plays, it picks up the dominant colour of the album art and glows with it from below. Every page has its own accent colour.
 - 💧 **Flows out of the screen edge:** the top corners curve inwards into the edge of the screen, with an elastic animation when it opens and closes.
-- 🎶 **A live compact island:** shows tiny album art and an animated equalizer while music plays, or a countdown while the focus timer runs.
+- 🎤 **Lyrics like Spotify:** the line being sung is bright and the previous/next lines are dimmed, sliding up as the song plays. The collapsed island shows the current line too, so you can sing along without opening it.
+- 🎶 **A live compact island:** shows tiny album art, the current lyric line and an animated equalizer while music plays, or a countdown while the focus timer runs.
 - 🌍 **7 languages:** English, Türkçe, Deutsch, Français, Español, Italiano, Português. Switch instantly from the ⋯ menu.
 - 🎮 **Stays out of the way:** hides itself during full-screen games and videos, doesn't show up in Alt+Tab, and never steals focus from other windows.
 
@@ -87,7 +89,7 @@ dotnet publish src/DynamicIsland -c Release -r win-x64 --self-contained -p:Publi
 
 ## ⚙️ Settings
 
-The clock, music, focus timer, notes, Claude Code and VS Code **work without any setup**. The weather shows Karabük, Türkiye by default. Mail and Calendar need your account details.
+The clock, music, lyrics, focus timer, notes, to-do list, Claude Code and VS Code **work without any setup**. The weather shows Karabük, Türkiye by default. Mail and Calendar need your account details.
 
 Settings live in `%AppData%\DynamicIsland\settings.json`. Open it from the app with **⋯ → Open settings file**, and restart the app after editing.
 
@@ -95,6 +97,7 @@ Settings live in `%AppData%\DynamicIsland\settings.json`. Open it from the app w
 |---|---|---|
 | `Language` | UI language (`en`, `tr`, `de`, `fr`, `es`, `it`, `pt`) | Optional (default: English; also in the ⋯ menu) |
 | `Weather` | Your city's coordinates | Optional (default: Karabük) |
+| `Lyrics` | Turn lyrics on/off, show them in the collapsed island, timing offset | Optional (on by default) |
 | `Mail` | IMAP server, email address, **app password** | For the Mail page |
 | `Calendar` | Your calendar's **iCal address** | For calendar events |
 | `ClaudeCode` | Extra project folders | Optional (detected automatically) |
@@ -134,9 +137,10 @@ An example settings file: [`settings.example.json`](settings.example.json)
 - The app collects no data and has no server of its own.
 - The only outgoing connections are:
   - your coordinates, sent to [Open-Meteo](https://open-meteo.com) for the weather
+  - the playing song's title, artist, album and length, sent to [LRCLIB](https://lrclib.net) to find lyrics (can be turned off with `Lyrics.Enabled`)
   - an IMAP connection to your own mail server
   - the iCal address you provide
-- Settings, passwords and notes stay on your computer in `%AppData%\DynamicIsland` and are never part of the repository.
+- Settings, passwords, notes and tasks stay on your computer in `%AppData%\DynamicIsland` and are never part of the repository.
 - The app password is currently stored as plain text. That's why it uses a revocable **app password** instead of your real password. Encrypted storage is on the roadmap.
 
 ---
@@ -153,7 +157,8 @@ src/DynamicIsland/
 │   ├── MailModule.cs        # IMAP (MailKit)
 │   ├── CalendarModule.cs    # iCal reader
 │   ├── ClaudeCodeModule.cs  # Recent projects from ~/.claude/projects sessions
-│   └── VsCodeModule.cs      # Recent folders from VS Code's state.vscdb (SQLite)
+│   ├── VsCodeModule.cs      # Recent folders from VS Code's state.vscdb (SQLite)
+│   └── LyricsModule.cs      # Time-synced lyrics from LRCLIB (LRC parsing, caching)
 ├── ViewModels/
 │   └── MainViewModel.cs     # Connects the modules to the UI
 ├── Views/
@@ -161,12 +166,13 @@ src/DynamicIsland/
 │   └── Pages/               # Each page is its own UserControl
 ├── Controls/
 │   ├── IslandShape.cs       # The glass shape (animated geometry + glow)
-│   └── TickRuler.cs         # Ruler for the focus duration
+│   ├── TickRuler.cs         # Ruler for the focus duration
+│   └── SeekBar.cs           # Draggable music progress bar
 ├── Localization/
 │   ├── Loc.cs               # Translation service (live language switching)
 │   ├── TExtension.cs        # {loc:T Key} XAML markup extension
 │   └── Languages/*.json     # en, tr, de, fr, es, it, pt
-├── Services/                # Settings, app launcher, notes, colour extraction, Win32
+├── Services/                # Settings, app launcher, notes & to-do storage, colour extraction, Win32
 └── Themes/Styles.xaml       # Shared styles
 ```
 
@@ -175,6 +181,7 @@ src/DynamicIsland/
 - **Animated geometry:** the island is redrawn every frame with a `StreamGeometry`. Width, height, corner radius and the "liquid" curve radius are animated independently.
 - **Album colour:** the cover is shrunk to 32 px, saturated and bright pixels are weighted more heavily to find the dominant colour, and it's then clamped in HSV to a range that suits the UI.
 - **Media:** Windows' Global System Media Transport Controls API provides info from every app. Progress is the app's last reported position plus the time elapsed since.
+- **Synced lyrics:** LRC timestamps are parsed into a sorted list; a 200 ms timer binary-searches the current line and only notifies the UI when the line actually changes, which triggers the slide-up animation.
 - **Live localization:** XAML binds to an indexer on a singleton (`{loc:T Key}`). Raising `PropertyChanged("Item[]")` updates every text instantly when the language changes.
 
 ### Adding a page

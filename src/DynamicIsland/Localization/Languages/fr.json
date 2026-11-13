@@ -86,5 +86,14 @@
   "TimeJustNow": "à l'instant",
   "TimeMinutesAgo": "il y a {0} min",
   "TimeHoursAgo": "il y a {0} h",
-  "TimeDaysAgo": "il y a {0} j"
+  "TimeDaysAgo": "il y a {0} j",
+  "TabTodo": "TÂCHES",
+  "TodoAddPlaceholder": "Ajoute une tâche puis appuie sur Entrée",
+  "TodoAdd": "Ajouter",
+  "TodoProgress": "PROGRÈS",
+  "TodoCompleted": "terminées",
+  "TodoClearDone": "Effacer les terminées",
+  "TodoEmpty": "Rien à faire. Ajoute ta première tâche ci-dessus.",
+  "LyricsSearching": "Recherche des paroles…",
+  "LyricsNotFound": "Aucune parole synchronisée trouvée"
 }

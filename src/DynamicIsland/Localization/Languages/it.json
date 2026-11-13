@@ -86,5 +86,14 @@
   "TimeJustNow": "proprio ora",
   "TimeMinutesAgo": "{0} min fa",
   "TimeHoursAgo": "{0} h fa",
-  "TimeDaysAgo": "{0} g fa"
+  "TimeDaysAgo": "{0} g fa",
+  "TabTodo": "ATTIVITÀ",
+  "TodoAddPlaceholder": "Aggiungi un'attività e premi Invio",
+  "TodoAdd": "Aggiungi",
+  "TodoProgress": "PROGRESSI",
+  "TodoCompleted": "completate",
+  "TodoClearDone": "Rimuovi completate",
+  "TodoEmpty": "Niente da fare. Aggiungi la tua prima attività qui sopra.",
+  "LyricsSearching": "Ricerca del testo…",
+  "LyricsNotFound": "Nessun testo sincronizzato trovato"
 }

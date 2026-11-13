@@ -9,13 +9,14 @@ All of Dynamic Island's settings live in a single JSON file. This guide covers w
 3. [Full example](#3-full-example)
 4. [Language](#4-language--language)
 5. [Weather](#5-weather--weather)
-6. [Mail](#6-mail--mail)
-7. [Calendar](#7-calendar--calendar)
-8. [Claude Code](#8-claude-code--claudecode)
-9. [VS Code](#9-vs-code--vscode)
-10. [Notes](#10-notes)
-11. [Troubleshooting](#11-troubleshooting)
-12. [Resetting settings](#12-resetting-settings)
+6. [Lyrics](#6-lyrics--lyrics)
+7. [Mail](#7-mail--mail)
+8. [Calendar](#8-calendar--calendar)
+9. [Claude Code](#9-claude-code--claudecode)
+10. [VS Code](#10-vs-code--vscode)
+11. [Notes and To-do](#11-notes-and-to-do)
+12. [Troubleshooting](#12-troubleshooting)
+13. [Resetting settings](#13-resetting-settings)
 
 ---
 
@@ -63,6 +64,11 @@ That is usually `C:\Users\<your-name>\AppData\Roaming\DynamicIsland\settings.jso
     "Latitude": 51.51,
     "Longitude": -0.13,
     "LocationName": "London"
+  },
+  "Lyrics": {
+    "Enabled": true,
+    "ShowInCompactIsland": true,
+    "OffsetMs": 0
   },
   "Mail": {
     "ImapHost": "imap.gmail.com",
@@ -132,7 +138,31 @@ Weather comes from [Open-Meteo](https://open-meteo.com). It's free and needs no 
 
 ---
 
-## 6. Mail — `Mail`
+## 6. Lyrics — `Lyrics`
+
+While music plays, the Music page shows **time-synced lyrics** the way Spotify does: the line being sung is bright, the previous and next lines are dimmed, and the lines slide up as the song goes on. The collapsed island shows the current line too, so you can follow along without opening it.
+
+Lyrics come from [LRCLIB](https://lrclib.net), a free, open lyrics database that needs no account or API key. The app sends the song's title, artist, album and length to look them up. Results are kept in memory, so replaying a song doesn't trigger another request.
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `Enabled` | true/false | `true` | Look up lyrics at all. Set to `false` and no requests are made to LRCLIB |
+| `ShowInCompactIsland` | true/false | `true` | Show the current line in the collapsed island |
+| `OffsetMs` | number | `0` | Timing correction in milliseconds. If lines appear **too early**, use a positive value such as `300`; if they appear **too late**, a negative value such as `-300` |
+
+```json
+"Lyrics": { "Enabled": true, "ShowInCompactIsland": true, "OffsetMs": 0 }
+```
+
+**Good to know**
+- Only **synced** lyrics are shown. If LRCLIB only has plain text for a song, or nothing at all, the page shows the large title instead, with "No synced lyrics found" in the corner.
+- Coverage is best for popular songs. Lesser-known tracks may have no synced lyrics.
+- For YouTube videos the app tidies titles like "Artist - Song (Official Video)" before searching, but very unusual titles may not match.
+- Timing follows the position reported by the player app. Spotify and most music apps report it accurately; some browsers update it less often, which `OffsetMs` can't fully fix.
+
+---
+
+## 7. Mail — `Mail`
 
 The Mail page shows your **unread count** and your **3 most recent emails**, and refreshes every 2 minutes.
 
@@ -215,7 +245,7 @@ Use the **⟳** button to refresh without waiting 2 minutes.
 
 ---
 
-## 7. Calendar — `Calendar`
+## 8. Calendar — `Calendar`
 
 The Calendar page shows a month view and your next 3 events, with a green dot under days that have events. Events are read from your provider's **iCal (.ics) address** and refreshed every 15 minutes.
 
@@ -256,7 +286,7 @@ The Calendar page shows a month view and your next 3 events, with a green dot un
 
 ---
 
-## 8. Claude Code — `ClaudeCode`
+## 9. Claude Code — `ClaudeCode`
 
 The Claude Code page lists the **3 projects you most recently worked on** with [Claude Code](https://claude.com/claude-code). Click a project to open a new terminal in that folder and run `claude`.
 
@@ -285,7 +315,7 @@ The Claude Code page lists the **3 projects you most recently worked on** with [
 
 ---
 
-## 9. VS Code — `VsCode`
+## 10. VS Code — `VsCode`
 
 The VS Code page lists the **3 folders or files you most recently opened** in VS Code. Click one to open it.
 
@@ -314,7 +344,7 @@ Locations checked automatically:
 
 ---
 
-## 10. Notes
+## 11. Notes and To-do
 
 The Notes page has no settings. What you type is saved automatically about half a second after you stop, to:
 
@@ -327,9 +357,18 @@ The Notes page has no settings. What you type is saved automatically about half 
 - Empty notes aren't saved.
 - The island stays open while you type and closes when you click another window.
 
+### To-do
+
+The To-do page has no settings either. Tasks are saved to `%AppData%\DynamicIsland\todos.json` on every change.
+
+- Type a task in the box at the top and press **Enter** (or click **＋**).
+- Click the circle to tick a task off; completed tasks move to the bottom and are struck through.
+- **✕** deletes a task, **Clear completed** removes all ticked tasks.
+- The card on the right shows how many tasks are done.
+
 ---
 
-## 11. Troubleshooting
+## 12. Troubleshooting
 
 <details>
 <summary><b>I changed a setting but nothing happened</b></summary>
@@ -378,6 +417,14 @@ If VS Code is installed somewhere unusual, put the full path to `Code.exe` in `V
 </details>
 
 <details>
+<summary><b>Lyrics don't show up</b></summary>
+
+- Check that `Lyrics.Enabled` is `true`.
+- The corner of the Music page says "No synced lyrics found" when LRCLIB has no time-synced lyrics for the song. You can check at [lrclib.net](https://lrclib.net).
+- If lyrics show but are out of sync, adjust `Lyrics.OffsetMs`.
+</details>
+
+<details>
 <summary><b>The weather is stuck on "Loading…"</b></summary>
 
 Check your internet connection. Make sure the coordinates use a **dot**, not a comma (`41.20` ✅, `41,20` ❌).
@@ -385,8 +432,8 @@ Check your internet connection. Make sure the coordinates use a **dot**, not a c
 
 ---
 
-## 12. Resetting settings
+## 13. Resetting settings
 
-Delete `settings.json` and restart the app; it's recreated with default values. Your notes are in a separate file (`notes.json`), so they're kept.
+Delete `settings.json` and restart the app; it's recreated with default values. Your notes and tasks are in separate files (`notes.json`, `todos.json`), so they're kept.
 
 To remove everything the app has stored, delete the `%AppData%\DynamicIsland` folder.

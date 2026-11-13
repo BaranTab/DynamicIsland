@@ -86,5 +86,14 @@
   "TimeJustNow": "gerade eben",
   "TimeMinutesAgo": "vor {0} Min.",
   "TimeHoursAgo": "vor {0} Std.",
-  "TimeDaysAgo": "vor {0} T."
+  "TimeDaysAgo": "vor {0} T.",
+  "TabTodo": "AUFGABEN",
+  "TodoAddPlaceholder": "Aufgabe eingeben und Enter drücken",
+  "TodoAdd": "Hinzufügen",
+  "TodoProgress": "FORTSCHRITT",
+  "TodoCompleted": "erledigt",
+  "TodoClearDone": "Erledigte löschen",
+  "TodoEmpty": "Nichts zu tun. Füge oben deine erste Aufgabe hinzu.",
+  "LyricsSearching": "Songtext wird gesucht…",
+  "LyricsNotFound": "Kein synchronisierter Songtext gefunden"
 }

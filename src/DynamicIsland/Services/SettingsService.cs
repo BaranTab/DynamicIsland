@@ -12,6 +12,7 @@ public sealed class AppSettings
     public string Language { get; set; } = "en";
 
     public WeatherSettings Weather { get; set; } = new();
+    public LyricsSettings Lyrics { get; set; } = new();
     public MailSettings Mail { get; set; } = new();
     public CalendarSettings Calendar { get; set; } = new();
     public ClaudeCodeSettings ClaudeCode { get; set; } = new();
@@ -23,6 +24,18 @@ public sealed class WeatherSettings
     public double Latitude { get; set; } = 41.20;
     public double Longitude { get; set; } = 32.62;
     public string LocationName { get; set; } = "Karabük";
+}
+
+public sealed class LyricsSettings
+{
+    /// <summary>Fetch time-synced lyrics from lrclib.net for the playing song.</summary>
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>Show the current lyric line in the collapsed island while music plays.</summary>
+    public bool ShowInCompactIsland { get; set; } = true;
+
+    /// <summary>Timing correction in milliseconds. Positive = lines appear later, negative = earlier.</summary>
+    public int OffsetMs { get; set; } = 0;
 }
 
 public sealed class MailSettings
