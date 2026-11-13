@@ -59,7 +59,7 @@ You don't need to install .NET. If Windows SmartScreen shows a warning, click **
 **Requirements:** Windows 10 (2004+) or Windows 11, [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 
 ```powershell
-git clone https://github.com/<your-username>/DynamicIsland.git
+git clone https://github.com/<BaranTab>/DynamicIsland.git
 cd DynamicIsland/src/DynamicIsland
 dotnet run
 ```
